@@ -160,15 +160,21 @@ public class MisskeyStreamingService : IDisposable
         var buffer = new byte[64 * 1024];
         var sb = new StringBuilder();
 
+        // Capture the socket into a local to avoid NullReferenceException /
+        // ObjectDisposedException when Disconnect() concurrently Abort()s,
+        // Dispose()s, and sets _ws = null.
+        var ws = _ws;
+        if (ws == null) return;
+
         try
         {
-            while (_ws?.State == WebSocketState.Open && !ct.IsCancellationRequested)
+            while (ws.State == WebSocketState.Open && !ct.IsCancellationRequested)
             {
                 sb.Clear();
                 WebSocketReceiveResult result;
                 do
                 {
-                    result = await _ws.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
+                    result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
                     if (result.MessageType == WebSocketMessageType.Close)
                     {
                         // Remote side closed — fire once here then exit
@@ -189,6 +195,11 @@ public class MisskeyStreamingService : IDisposable
         catch (WebSocketException)
         {
             // Unexpected network error — signal callers
+            Disconnected?.Invoke();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Socket was disposed by a concurrent Disconnect() call — treat as disconnect
             Disconnected?.Invoke();
         }
     }
@@ -239,7 +250,11 @@ public class MisskeyStreamingService : IDisposable
         }
     }
 
-    public void Dispose() => Disconnect();
+    public void Dispose()
+    {
+        Disconnect();
+        _sendLock.Dispose();
+    }
 }
 
 // ── Streaming event types ────────────────────────────────────────────────────

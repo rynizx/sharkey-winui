@@ -79,6 +79,7 @@ public sealed partial class NotificationSettingsPage : Page
     {
         base.OnNavigatedFrom(e);
         _cts.Cancel();
+        _cts.Dispose();
         _cts = new CancellationTokenSource();
     }
 

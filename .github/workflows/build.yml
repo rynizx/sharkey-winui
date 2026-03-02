@@ -71,12 +71,21 @@ jobs:
           $testProjects = Get-ChildItem -Recurse -Filter "*.csproj" |
             Where-Object { (Get-Content $_.FullName -Raw) -match "Microsoft\.NET\.Test\.Sdk|xunit|NUnit|MSTest" }
           if ($testProjects.Count -gt 0) {
-            dotnet test `
-              --configuration ${{ env.CONFIGURATION }} `
-              --no-build `
-              --verbosity normal `
-              --logger "trx;LogFileName=test-results.trx"
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            $failed = $false
+            foreach ($proj in $testProjects) {
+              Write-Host "Running tests for $($proj.FullName)..."
+              dotnet test $proj.FullName `
+                --configuration ${{ env.CONFIGURATION }} `
+                --no-build `
+                --verbosity normal `
+                --logger "trx;LogFileName=test-results-$($proj.BaseName).trx"
+              if ($LASTEXITCODE -ne 0) {
+                $failed = $true
+              }
+            }
+            if ($failed) {
+              exit 1
+            }
           } else {
             Write-Host "No test projects found — skipping tests."
           }

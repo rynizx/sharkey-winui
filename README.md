@@ -59,7 +59,7 @@ A native Windows client for [Misskey](https://misskey-hub.net/) and [Sharkey](ht
 
 ## Requirements
 
-- Windows 10 version 1903 (build 19041) or later
+- Windows 10 version 1809 (build 17763) or later
 - .NET 8 runtime (bundled in the self-contained build)
 
 ---
@@ -67,12 +67,11 @@ A native Windows client for [Misskey](https://misskey-hub.net/) and [Sharkey](ht
 ## Building from source
 
 ```bash
-# Install the Windows App SDK workload once
-dotnet workload install microsoft-net-sdk-windowsappsdk
-
-# Restore and build
+# Restore NuGet packages (including Microsoft.WindowsAppSDK)
 dotnet restore SharkeyWinUI/SharkeyWinUI.csproj
-dotnet build   SharkeyWinUI/SharkeyWinUI.csproj -c Release
+
+# Build
+dotnet build SharkeyWinUI/SharkeyWinUI.csproj -c Release
 
 # Run
 dotnet run --project SharkeyWinUI/SharkeyWinUI.csproj
