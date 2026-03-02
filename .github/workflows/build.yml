@@ -12,7 +12,7 @@ on:
 env:
   SOLUTION: SharkeyWinUI/SharkeyWinUI.csproj
   CONFIGURATION: Release
-  TFM: net9.0-windows10.0.19041.0
+  TFM: net8.0-windows10.0.19041.0
   RUNTIME: win-x64
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '8.0.x'
 
       - name: Install Windows App SDK workload
         run: dotnet workload install microsoft-net-sdk-windowsappsdk
@@ -88,6 +88,8 @@ jobs:
     name: Package MSIX
     runs-on: windows-latest
     needs: build
+    permissions:
+      contents: read
     # Only publish packages from the main branch or version tags
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
 
@@ -100,7 +102,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '8.0.x'
 
       - name: Install Windows App SDK workload
         run: dotnet workload install microsoft-net-sdk-windowsappsdk

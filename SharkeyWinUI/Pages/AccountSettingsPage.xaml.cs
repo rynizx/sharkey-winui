@@ -16,11 +16,7 @@ public sealed partial class AccountSettingsPage : Page
         InitializeComponent();
     }
 
-    protected override void OnNavigatedTo(NavigationEventArgs e)
-    {
-        base.OnNavigatedTo(e);
-        _ = LoadAsync(_cts.Token);
-    }
+    // OnNavigatedTo is defined in the Windows Hello section below
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
@@ -268,6 +264,89 @@ public sealed partial class AccountSettingsPage : Page
 
     private void OpenNotifSettingsButton_Click(object sender, RoutedEventArgs e)
         => Frame.Navigate(typeof(NotificationSettingsPage));
+
+    // ── Windows Hello section ─────────────────────────────────────────────────
+
+    protected override async void OnNavigatedTo(NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+
+        // Initialise the Hello toggle before loading the rest of the page
+        // so it reflects the current state even if LoadAsync is slow.
+        await InitHelloToggleAsync();
+        _ = LoadAsync(_cts.Token);
+    }
+
+    private async Task InitHelloToggleAsync()
+    {
+        var available = await WindowsHelloService.IsAvailableAsync();
+
+        if (!available)
+        {
+            HelloSwitch.IsEnabled = false;
+            HelloStatusBar.Severity = InfoBarSeverity.Warning;
+            HelloStatusBar.Message  =
+                "Windows Hello is not set up on this device. " +
+                "Go to Windows Settings → Accounts → Sign-in options to configure it.";
+            HelloStatusBar.IsOpen = true;
+            return;
+        }
+
+        // Suppress the Toggled event while we programmatically set the value
+        _suppressHelloToggle = true;
+        HelloSwitch.IsOn     = App.AuthService.HelloEnabled;
+        _suppressHelloToggle = false;
+    }
+
+    private bool _suppressHelloToggle;
+
+    private async void HelloSwitch_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_suppressHelloToggle) return;
+
+        var wantEnable = HelloSwitch.IsOn;
+
+        if (wantEnable)
+        {
+            // Require a successful Hello verification before enabling the lock
+            var result = await App.AuthService.TryRestoreWithHelloAsync();
+            if (result == HelloRestoreResult.Success)
+            {
+                App.AuthService.HelloEnabled = true;
+                ShowHelloStatus("Windows Hello protection enabled.", InfoBarSeverity.Success);
+            }
+            else
+            {
+                // Revert the toggle — verification didn't succeed
+                _suppressHelloToggle = true;
+                HelloSwitch.IsOn     = false;
+                _suppressHelloToggle = false;
+
+                var msg = result switch
+                {
+                    HelloRestoreResult.Cancelled
+                        => "Verification cancelled.",
+                    HelloRestoreResult.HelloUnavailable
+                        => "Windows Hello is not available.",
+                    _
+                        => "Windows Hello verification failed. Please try again or check your device sign-in settings.",
+                };
+                ShowHelloStatus(msg, InfoBarSeverity.Error);
+            }
+        }
+        else
+        {
+            App.AuthService.HelloEnabled = false;
+            ShowHelloStatus("Windows Hello protection disabled.", InfoBarSeverity.Informational);
+        }
+    }
+
+    private void ShowHelloStatus(string msg, InfoBarSeverity severity)
+    {
+        HelloStatusBar.Message  = msg;
+        HelloStatusBar.Severity = severity;
+        HelloStatusBar.IsOpen   = true;
+    }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

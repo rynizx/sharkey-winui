@@ -29,26 +29,44 @@ public sealed partial class MainWindow : Window
         App.Streaming = _streaming;
     }
 
-    private void NavView_Loaded(object sender, RoutedEventArgs e)
+    private async void NavView_Loaded(object sender, RoutedEventArgs e)
     {
-        if (App.AuthService.IsAuthenticated)
+        NavView.IsEnabled        = false;
+        ComposeButton.Visibility = Visibility.Collapsed;
+
+        if (!App.AuthService.HasSavedSession)
+        {
+            // First run — show login
+            ContentFrame.Navigate(typeof(LoginPage));
+            return;
+        }
+
+        if (App.AuthService.HelloEnabled)
+        {
+            // Credentials saved + Hello required — show lock screen
+            // The lock page calls OnLoggedIn() after successful verification
+            ContentFrame.Navigate(typeof(WindowsHelloLockPage));
+            return;
+        }
+
+        // Credentials saved, no Hello required — silently restore
+        if (App.AuthService.TryRestoreSession())
         {
             ShowAuthenticatedUI();
-            _ = ConnectStreamingAsync();
+            await ConnectStreamingAsync();
         }
         else
         {
-            NavView.IsEnabled = false;
-            ComposeButton.Visibility = Visibility.Collapsed;
+            // Vault entry missing (e.g., OS re-install) — re-authenticate
             ContentFrame.Navigate(typeof(LoginPage));
         }
     }
 
-    /// <summary>Called by LoginPage after successful auth.</summary>
-    public void OnLoggedIn()
+    /// <summary>Called by LoginPage or WindowsHelloLockPage after successful auth.</summary>
+    public async void OnLoggedIn()
     {
         ShowAuthenticatedUI();
-        _ = ConnectStreamingAsync();
+        await ConnectStreamingAsync();
     }
 
     private void ShowAuthenticatedUI()

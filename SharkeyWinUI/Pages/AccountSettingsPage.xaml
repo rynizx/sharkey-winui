@@ -169,6 +169,30 @@
                              Margin="0,8,0,0"
                              Click="OpenNotifSettingsButton_Click" />
 
+            <!-- ── Windows Hello ─────────────────────────────────────────── -->
+            <Expander Header="Windows Hello" HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Stretch">
+                <StackPanel Spacing="12" Padding="0,8,0,8">
+
+                    <TextBlock TextWrapping="Wrap"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Style="{StaticResource CaptionTextBlockStyle}">
+                        When enabled, Windows will ask for your fingerprint, face,
+                        or PIN each time you open the app.  Your API token is always
+                        stored encrypted in the Windows Credential Manager.
+                    </TextBlock>
+
+                    <InfoBar x:Name="HelloStatusBar" IsOpen="False" IsClosable="False"
+                             IsIconVisible="True" />
+
+                    <ToggleSwitch x:Name="HelloSwitch"
+                                  Header="Require Windows Hello on startup"
+                                  OffContent="Disabled" OnContent="Enabled"
+                                  Toggled="HelloSwitch_Toggled" />
+
+                </StackPanel>
+            </Expander>
+
         </StackPanel>
     </ScrollViewer>
 </Page>

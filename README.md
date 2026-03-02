@@ -1,6 +1,6 @@
 # Sharkey WinUI
 
-A native Windows client for [Misskey](https://misskey-hub.net/) and [Sharkey](https://activitypub.software/ahrienby/Sharkey) — built with WinUI 3 and .NET 9.
+A native Windows client for [Misskey](https://misskey-hub.net/) and [Sharkey](https://activitypub.software/ahrienby/Sharkey) — built with WinUI 3 and .NET 8.
 
 ![Build & Package](https://github.com/rynizx/sharkey-winui/actions/workflows/build.yml/badge.svg)
 
@@ -60,7 +60,7 @@ A native Windows client for [Misskey](https://misskey-hub.net/) and [Sharkey](ht
 ## Requirements
 
 - Windows 10 version 1903 (build 19041) or later
-- .NET 9 runtime (bundled in the self-contained build)
+- .NET 8 runtime (bundled in the self-contained build)
 
 ---
 
@@ -115,7 +115,9 @@ Two sign-in methods are supported:
 1. **MiAuth** *(recommended)* — opens your instance in a browser; you approve the app there. No password is ever entered in this app.
 2. **API token** — paste a token from your instance's *Settings → API*.
 
-Credentials are stored in Windows local app settings (`ApplicationData.Current.LocalSettings`).
+Credentials are stored in two places:
+- **API token** — encrypted in the Windows Credential Manager (PasswordVault / DPAPI, scoped to your Windows user account)
+- **Server URL, user ID, username** — stored in Windows local app settings (`ApplicationData.Current.LocalSettings`)
 
 ---
 
