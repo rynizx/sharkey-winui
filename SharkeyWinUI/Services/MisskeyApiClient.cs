@@ -1,21 +1,23 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using SharkeyWinUI.Models;
 
 namespace SharkeyWinUI.Services;
 
 /// <summary>
 /// HTTP client for the Misskey/Sharkey REST API.
-/// All requests follow the Misskey API convention: POST /api/{endpoint} with a JSON body.
-/// Authentication is provided by including the "i" field (API token) in the request body.
+/// All authenticated requests POST JSON bodies with the "i" field set to the API token.
+/// Endpoint reference: https://github.com/misskey-dev/misskey (AGPL-3.0)
 /// </summary>
 public class MisskeyApiClient
 {
     private readonly HttpClient _http;
-    private static readonly JsonSerializerOptions _jsonOptions = new()
+
+    private static readonly JsonSerializerOptions JsonOpts = new()
     {
         PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
     public string? ServerUrl { get; private set; }
@@ -27,486 +29,601 @@ public class MisskeyApiClient
         _http.DefaultRequestHeaders.Add("User-Agent", "SharkeyWinUI/1.0");
     }
 
-    /// <summary>
-    /// Configures the client with the target server and authentication token.
-    /// </summary>
+    /// <summary>Configures the client with the target server and auth token.</summary>
     public void Configure(string serverUrl, string? token)
     {
         ServerUrl = serverUrl.TrimEnd('/');
         Token = token;
     }
 
-    // ── Authentication ────────────────────────────────────────────────────────
+    // ── MiAuth ────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Generates a MiAuth session URL. The user opens this URL in a browser,
-    /// grants permission, and then the app calls <see cref="CheckMiAuthAsync"/>.
+    /// Generates a MiAuth session. The returned browser URL should be opened
+    /// for the user to grant permission; afterwards call <see cref="CheckMiAuthAsync"/>.
     /// </summary>
-    public (string checkUrl, string browserUrl) GenerateMiAuthSession(string appName, IEnumerable<string> permissions)
+    public (string checkUrl, string browserUrl) GenerateMiAuthSession(
+        string appName, IEnumerable<string> permissions, string? callbackUrl = null)
     {
         var sessionId = Guid.NewGuid().ToString();
         var permStr = string.Join(",", permissions);
-        var browserUrl = $"{ServerUrl}/miauth/{sessionId}?name={Uri.EscapeDataString(appName)}&permission={Uri.EscapeDataString(permStr)}";
-        var checkUrl = $"{ServerUrl}/api/miauth/{sessionId}/check";
-        return (checkUrl, browserUrl);
+        var query = $"name={Uri.EscapeDataString(appName)}&permission={Uri.EscapeDataString(permStr)}";
+        if (callbackUrl != null) query += $"&callback={Uri.EscapeDataString(callbackUrl)}";
+        return (
+            checkUrl: $"{ServerUrl}/api/miauth/{sessionId}/check",
+            browserUrl: $"{ServerUrl}/miauth/{sessionId}?{query}"
+        );
     }
 
-    /// <summary>
-    /// Checks whether a MiAuth session has been approved and retrieves the token.
-    /// </summary>
+    /// <summary>Polls whether a MiAuth session has been approved.</summary>
     public Task<MiAuthCheckResponse> CheckMiAuthAsync(string checkUrl, CancellationToken ct = default)
-        => PostRawAsync<MiAuthCheckResponse>(checkUrl, new { }, ct);
+        => PostRawAsync<MiAuthCheckResponse>(checkUrl, new Dictionary<string, object?>(), ct);
 
-    /// <summary>
-    /// Fetches the current user's account information.
-    /// </summary>
-    public Task<User> GetCurrentUserAsync(CancellationToken ct = default)
-        => PostAsync<User>("i", new { }, ct);
+    // ── Current user ──────────────────────────────────────────────────────────
+
+    /// <summary>Returns full MeDetailed info for the authenticated user.</summary>
+    public Task<User> GetMeAsync(CancellationToken ct = default)
+        => PostAsync<User>("i", EmptyBody(), ct);
 
     // ── Instance ──────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Fetches instance metadata (name, version, emoji list, rules, etc.).
-    /// </summary>
-    public Task<InstanceMeta> GetInstanceMetaAsync(CancellationToken ct = default)
-        => PostAsync<InstanceMeta>("meta", new { detail = true }, ct);
+    /// <summary>Returns instance metadata (name, version, rules, emoji, etc.).</summary>
+    public Task<InstanceMeta> GetMetaAsync(CancellationToken ct = default)
+        => PostAsync<InstanceMeta>("meta", Body("detail", true), ct);
 
-    /// <summary>
-    /// Fetches custom emoji for this instance.
-    /// </summary>
+    /// <summary>Returns all custom emoji for this instance.</summary>
     public Task<EmojisResponse> GetEmojisAsync(CancellationToken ct = default)
-        => PostAsync<EmojisResponse>("emojis", new { }, ct);
+        => PostAsync<EmojisResponse>("emojis", EmptyBody(), ct);
 
     // ── Timelines ─────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Fetches the authenticated user's home timeline.
-    /// </summary>
+    /// <summary>Home timeline (notes from followed users + self). Requires auth.</summary>
     public Task<List<Note>> GetHomeTimelineAsync(
-        int limit = 20, string? untilId = null, string? sinceId = null, CancellationToken ct = default)
-        => PostAsync<List<Note>>("notes/timeline", BuildPaginationBody(limit, untilId, sinceId), ct);
+        int limit = 20, string? untilId = null, string? sinceId = null,
+        bool withRenotes = true, bool withFiles = false, CancellationToken ct = default)
+        => PostAsync<List<Note>>("notes/timeline",
+            Paginate(limit, untilId, sinceId,
+                ("withRenotes", (object)withRenotes),
+                ("withFiles", withFiles)), ct);
 
-    /// <summary>
-    /// Fetches the local timeline (notes from this server only).
-    /// </summary>
+    /// <summary>Local timeline (public notes from this server only).</summary>
     public Task<List<Note>> GetLocalTimelineAsync(
-        int limit = 20, string? untilId = null, string? sinceId = null, CancellationToken ct = default)
-        => PostAsync<List<Note>>("notes/local-timeline", BuildPaginationBody(limit, untilId, sinceId), ct);
+        int limit = 20, string? untilId = null, string? sinceId = null,
+        bool withRenotes = true, bool withReplies = false, bool withFiles = false,
+        CancellationToken ct = default)
+        => PostAsync<List<Note>>("notes/local-timeline",
+            Paginate(limit, untilId, sinceId,
+                ("withRenotes", (object)withRenotes),
+                ("withReplies", withReplies),
+                ("withFiles", withFiles)), ct);
 
-    /// <summary>
-    /// Fetches the social (hybrid) timeline: local + followed remote users.
-    /// </summary>
+    /// <summary>Social / hybrid timeline (local + followed remote users).</summary>
     public Task<List<Note>> GetSocialTimelineAsync(
-        int limit = 20, string? untilId = null, string? sinceId = null, CancellationToken ct = default)
-        => PostAsync<List<Note>>("notes/hybrid-timeline", BuildPaginationBody(limit, untilId, sinceId), ct);
+        int limit = 20, string? untilId = null, string? sinceId = null,
+        bool withRenotes = true, bool withReplies = false, bool withFiles = false,
+        CancellationToken ct = default)
+        => PostAsync<List<Note>>("notes/hybrid-timeline",
+            Paginate(limit, untilId, sinceId,
+                ("withRenotes", (object)withRenotes),
+                ("withReplies", withReplies),
+                ("withFiles", withFiles)), ct);
 
-    /// <summary>
-    /// Fetches the global timeline (all federated notes).
-    /// </summary>
+    /// <summary>Global timeline (all federated public notes).</summary>
     public Task<List<Note>> GetGlobalTimelineAsync(
-        int limit = 20, string? untilId = null, string? sinceId = null, CancellationToken ct = default)
-        => PostAsync<List<Note>>("notes/global-timeline", BuildPaginationBody(limit, untilId, sinceId), ct);
+        int limit = 20, string? untilId = null, string? sinceId = null,
+        bool withRenotes = true, bool withFiles = false, CancellationToken ct = default)
+        => PostAsync<List<Note>>("notes/global-timeline",
+            Paginate(limit, untilId, sinceId,
+                ("withRenotes", (object)withRenotes),
+                ("withFiles", withFiles)), ct);
 
-    /// <summary>
-    /// Fetches the bubble timeline (Sharkey-specific: notes from servers in the bubble).
-    /// </summary>
+    /// <summary>Bubble timeline — Sharkey-specific (notes from bubble servers).</summary>
     public Task<List<Note>> GetBubbleTimelineAsync(
-        int limit = 20, string? untilId = null, string? sinceId = null, CancellationToken ct = default)
-        => PostAsync<List<Note>>("notes/bubble-timeline", BuildPaginationBody(limit, untilId, sinceId), ct);
+        int limit = 20, string? untilId = null, string? sinceId = null,
+        bool withRenotes = true, bool withFiles = false, CancellationToken ct = default)
+        => PostAsync<List<Note>>("notes/bubble-timeline",
+            Paginate(limit, untilId, sinceId,
+                ("withRenotes", (object)withRenotes),
+                ("withFiles", withFiles)), ct);
 
-    /// <summary>
-    /// Fetches notes from a specific channel.
-    /// </summary>
+    /// <summary>Timeline for a specific channel.</summary>
     public Task<List<Note>> GetChannelTimelineAsync(
-        string channelId, int limit = 20, string? untilId = null, string? sinceId = null, CancellationToken ct = default)
-        => PostAsync<List<Note>>("channels/timeline", BuildPaginationBody(limit, untilId, sinceId, new { channelId }), ct);
+        string channelId, int limit = 20, string? untilId = null, string? sinceId = null,
+        CancellationToken ct = default)
+        => PostAsync<List<Note>>("channels/timeline",
+            Paginate(limit, untilId, sinceId, ("channelId", (object)channelId)), ct);
 
     // ── Notes ─────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Fetches a single note by ID.
-    /// </summary>
+    /// <summary>Returns a single note by ID.</summary>
     public Task<Note> GetNoteAsync(string noteId, CancellationToken ct = default)
-        => PostAsync<Note>("notes/show", new { noteId }, ct);
+        => PostAsync<Note>("notes/show", Body("noteId", noteId), ct);
 
-    /// <summary>
-    /// Fetches replies to a note.
-    /// </summary>
+    /// <summary>Returns replies to a note (paginated).</summary>
     public Task<List<Note>> GetNoteRepliesAsync(
-        string noteId, int limit = 20, string? untilId = null, string? sinceId = null, CancellationToken ct = default)
-        => PostAsync<List<Note>>("notes/replies", BuildPaginationBody(limit, untilId, sinceId, new { noteId }), ct);
+        string noteId, int limit = 20, string? untilId = null, string? sinceId = null,
+        CancellationToken ct = default)
+        => PostAsync<List<Note>>("notes/replies",
+            Paginate(limit, untilId, sinceId, ("noteId", (object)noteId)), ct);
 
-    /// <summary>
-    /// Fetches renotes of a note.
-    /// </summary>
+    /// <summary>Returns renotes of a note (paginated).</summary>
     public Task<List<Note>> GetNoteRenotesAsync(
-        string noteId, int limit = 20, string? untilId = null, CancellationToken ct = default)
-        => PostAsync<List<Note>>("notes/renotes", BuildPaginationBody(limit, untilId, null, new { noteId }), ct);
+        string noteId, int limit = 20, string? untilId = null,
+        CancellationToken ct = default)
+        => PostAsync<List<Note>>("notes/renotes",
+            Paginate(limit, untilId, null, ("noteId", (object)noteId)), ct);
 
     /// <summary>
-    /// Creates a new note.
+    /// Creates a new note. Visibility values: "public", "home", "followers", "specified".
+    /// reactionAcceptance: null | "likeOnly" | "likeOnlyForRemote" |
+    ///   "nonSensitiveOnly" | "nonSensitiveOnlyForLocalLikeOnlyForRemote".
     /// </summary>
     public Task<CreateNoteResponse> CreateNoteAsync(
         string? text,
         string visibility = "public",
+        List<string>? visibleUserIds = null,
         string? cw = null,
         bool localOnly = false,
+        string? reactionAcceptance = null,
+        bool noExtractMentions = false,
+        bool noExtractHashtags = false,
+        bool noExtractEmojis = false,
         string? replyId = null,
         string? renoteId = null,
         List<string>? fileIds = null,
-        bool? sensitive = null,
         string? channelId = null,
+        PollCreate? poll = null,
         CancellationToken ct = default)
     {
-        var body = new Dictionary<string, object?> { ["text"] = text, ["visibility"] = visibility };
+        var body = EmptyBody();
+        body["visibility"] = visibility;
+        if (text != null) body["text"] = text;
         if (cw != null) body["cw"] = cw;
         if (localOnly) body["localOnly"] = true;
+        if (reactionAcceptance != null) body["reactionAcceptance"] = reactionAcceptance;
+        if (noExtractMentions) body["noExtractMentions"] = true;
+        if (noExtractHashtags) body["noExtractHashtags"] = true;
+        if (noExtractEmojis) body["noExtractEmojis"] = true;
         if (replyId != null) body["replyId"] = replyId;
         if (renoteId != null) body["renoteId"] = renoteId;
         if (fileIds?.Count > 0) body["fileIds"] = fileIds;
-        if (sensitive.HasValue) body["sensitive"] = sensitive.Value;
         if (channelId != null) body["channelId"] = channelId;
+        if (visibleUserIds?.Count > 0) body["visibleUserIds"] = visibleUserIds;
+        if (poll != null)
+        {
+            var pollObj = new Dictionary<string, object?> { ["choices"] = poll.Choices, ["multiple"] = poll.Multiple };
+            if (poll.ExpiresAt.HasValue) pollObj["expiresAt"] = poll.ExpiresAt.Value;
+            if (poll.ExpiredAfter.HasValue) pollObj["expiredAfter"] = poll.ExpiredAfter.Value;
+            body["poll"] = pollObj;
+        }
         return PostAsync<CreateNoteResponse>("notes/create", body, ct);
     }
 
-    /// <summary>
-    /// Deletes a note by ID.
-    /// </summary>
+    /// <summary>Deletes a note by ID (must be the author).</summary>
     public Task DeleteNoteAsync(string noteId, CancellationToken ct = default)
-        => PostAsync<EmptyResponse>("notes/delete", new { noteId }, ct);
+        => PostVoidAsync("notes/delete", Body("noteId", noteId), ct);
 
-    /// <summary>
-    /// Searches notes by text query.
-    /// </summary>
+    /// <summary>Votes on a poll choice. choiceIndex is zero-based.</summary>
+    public Task VotePollAsync(string noteId, int choiceIndex, CancellationToken ct = default)
+        => PostVoidAsync("notes/polls/vote",
+            new Dictionary<string, object?> { ["noteId"] = noteId, ["choice"] = choiceIndex }, ct);
+
+    /// <summary>Full-text note search.</summary>
     public Task<List<Note>> SearchNotesAsync(
         string query, int limit = 20, string? untilId = null, string? sinceId = null,
-        string? userId = null, string? channelId = null, CancellationToken ct = default)
-        => PostAsync<List<Note>>("notes/search", BuildPaginationBody(limit, untilId, sinceId,
-            new { query, userId, channelId }), ct);
+        string? userId = null, string? channelId = null, string? host = null,
+        CancellationToken ct = default)
+        => PostAsync<List<Note>>("notes/search",
+            Paginate(limit, untilId, sinceId,
+                ("query", (object)query),
+                ("userId", userId!),
+                ("channelId", channelId!),
+                ("host", host!)), ct);
 
     // ── Reactions ─────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Adds a reaction (custom emoji or Unicode) to a note.
-    /// </summary>
+    /// <summary>Adds a reaction (Unicode emoji or :custom_name:) to a note.</summary>
     public Task AddReactionAsync(string noteId, string reaction, CancellationToken ct = default)
-        => PostAsync<EmptyResponse>("notes/reactions/create", new { noteId, reaction }, ct);
+        => PostVoidAsync("notes/reactions/create",
+            new Dictionary<string, object?> { ["noteId"] = noteId, ["reaction"] = reaction }, ct);
 
-    /// <summary>
-    /// Removes the current user's reaction from a note.
-    /// </summary>
+    /// <summary>Removes the current user's reaction from a note.</summary>
     public Task RemoveReactionAsync(string noteId, CancellationToken ct = default)
-        => PostAsync<EmptyResponse>("notes/reactions/delete", new { noteId }, ct);
+        => PostVoidAsync("notes/reactions/delete", Body("noteId", noteId), ct);
 
-    /// <summary>
-    /// Fetches the list of reactions on a note.
-    /// </summary>
+    /// <summary>Lists reactions on a note with user details.</summary>
     public Task<List<ReactionEntry>> GetNoteReactionsAsync(
-        string noteId, string? type = null, int limit = 50, string? untilId = null, CancellationToken ct = default)
-        => PostAsync<List<ReactionEntry>>("notes/reactions", BuildPaginationBody(limit, untilId, null,
-            new { noteId, type }), ct);
+        string noteId, string? reactionType = null, int limit = 50, string? untilId = null,
+        CancellationToken ct = default)
+        => PostAsync<List<ReactionEntry>>("notes/reactions",
+            Paginate(limit, untilId, null,
+                ("noteId", (object)noteId),
+                ("type", reactionType!)), ct);
+
+    // ── Favourites ────────────────────────────────────────────────────────────
+
+    /// <summary>Adds a note to the authenticated user's favourites.</summary>
+    public Task FavouriteNoteAsync(string noteId, CancellationToken ct = default)
+        => PostVoidAsync("notes/favorites/create", Body("noteId", noteId), ct);
+
+    /// <summary>Removes a note from the authenticated user's favourites.</summary>
+    public Task UnfavouriteNoteAsync(string noteId, CancellationToken ct = default)
+        => PostVoidAsync("notes/favorites/delete", Body("noteId", noteId), ct);
 
     // ── Users ─────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Fetches a user by ID or username+host.
-    /// </summary>
-    public Task<User> GetUserAsync(string? userId = null, string? username = null, string? host = null, CancellationToken ct = default)
-        => PostAsync<User>("users/show", new { userId, username, host }, ct);
+    /// <summary>Returns detailed info for a user by ID or username+host.</summary>
+    public Task<User> GetUserAsync(
+        string? userId = null, string? username = null, string? host = null,
+        CancellationToken ct = default)
+    {
+        var b = EmptyBody();
+        if (userId != null) b["userId"] = userId;
+        if (username != null) b["username"] = username;
+        if (host != null) b["host"] = host;
+        return PostAsync<User>("users/show", b, ct);
+    }
 
-    /// <summary>
-    /// Fetches notes created by a user.
-    /// </summary>
+    /// <summary>Returns notes created by a user.</summary>
     public Task<List<Note>> GetUserNotesAsync(
         string userId, int limit = 20, string? untilId = null, string? sinceId = null,
         bool includeReplies = false, bool includeMyRenotes = true, bool withFiles = false,
         CancellationToken ct = default)
-        => PostAsync<List<Note>>("users/notes", BuildPaginationBody(limit, untilId, sinceId,
-            new { userId, includeReplies, includeMyRenotes, withFiles }), ct);
+        => PostAsync<List<Note>>("users/notes",
+            Paginate(limit, untilId, sinceId,
+                ("userId", (object)userId),
+                ("includeReplies", includeReplies),
+                ("includeMyRenotes", includeMyRenotes),
+                ("withFiles", withFiles)), ct);
 
-    /// <summary>
-    /// Fetches users that a given user is following.
-    /// </summary>
+    /// <summary>Returns the list of users a given user is following.</summary>
     public Task<List<FollowEntry>> GetFollowingAsync(
         string userId, int limit = 30, string? untilId = null, CancellationToken ct = default)
-        => PostAsync<List<FollowEntry>>("users/following", BuildPaginationBody(limit, untilId, null,
-            new { userId }), ct);
+        => PostAsync<List<FollowEntry>>("users/following",
+            Paginate(limit, untilId, null, ("userId", (object)userId)), ct);
 
-    /// <summary>
-    /// Fetches a user's followers.
-    /// </summary>
+    /// <summary>Returns the followers of a given user.</summary>
     public Task<List<FollowEntry>> GetFollowersAsync(
         string userId, int limit = 30, string? untilId = null, CancellationToken ct = default)
-        => PostAsync<List<FollowEntry>>("users/followers", BuildPaginationBody(limit, untilId, null,
-            new { userId }), ct);
+        => PostAsync<List<FollowEntry>>("users/followers",
+            Paginate(limit, untilId, null, ("userId", (object)userId)), ct);
+
+    /// <summary>Searches users by display name / username.</summary>
+    public Task<List<User>> SearchUsersAsync(
+        string query, int limit = 10, int offset = 0,
+        string origin = "combined", CancellationToken ct = default)
+        => PostAsync<List<User>>("users/search",
+            new Dictionary<string, object?> { ["query"] = query, ["limit"] = limit, ["offset"] = offset, ["origin"] = origin }, ct);
+
+    /// <summary>Returns a follow relationship between two users.</summary>
+    public Task<UserRelation> GetUserRelationAsync(string userId, CancellationToken ct = default)
+        => PostAsync<UserRelation>("users/relation", Body("userId", userId), ct);
 
     // ── Following ─────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Follows a user.
-    /// </summary>
+    /// <summary>Follows a user. Returns a stub follow record.</summary>
     public Task<FollowResponse> FollowUserAsync(string userId, CancellationToken ct = default)
-        => PostAsync<FollowResponse>("following/create", new { userId }, ct);
+        => PostAsync<FollowResponse>("following/create", Body("userId", userId), ct);
 
-    /// <summary>
-    /// Unfollows a user.
-    /// </summary>
-    public Task<User> UnfollowUserAsync(string userId, CancellationToken ct = default)
-        => PostAsync<User>("following/delete", new { userId }, ct);
+    /// <summary>Unfollows a user.</summary>
+    public Task UnfollowUserAsync(string userId, CancellationToken ct = default)
+        => PostVoidAsync("following/delete", Body("userId", userId), ct);
+
+    /// <summary>Accepts a pending follow request.</summary>
+    public Task AcceptFollowRequestAsync(string userId, CancellationToken ct = default)
+        => PostVoidAsync("following/requests/accept", Body("userId", userId), ct);
+
+    /// <summary>Rejects a pending follow request.</summary>
+    public Task RejectFollowRequestAsync(string userId, CancellationToken ct = default)
+        => PostVoidAsync("following/requests/reject", Body("userId", userId), ct);
+
+    // ── Blocking / Muting ────────────────────────────────────────────────────
+
+    /// <summary>Blocks a user.</summary>
+    public Task BlockUserAsync(string userId, CancellationToken ct = default)
+        => PostVoidAsync("blocking/create", Body("userId", userId), ct);
+
+    /// <summary>Unblocks a user.</summary>
+    public Task UnblockUserAsync(string userId, CancellationToken ct = default)
+        => PostVoidAsync("blocking/delete", Body("userId", userId), ct);
+
+    /// <summary>Mutes a user (optionally with an expiry).</summary>
+    public Task MuteUserAsync(string userId, DateTimeOffset? expiresAt = null, CancellationToken ct = default)
+    {
+        var b = Body("userId", userId);
+        if (expiresAt.HasValue) b["expiresAt"] = expiresAt.Value.ToUnixTimeMilliseconds();
+        return PostVoidAsync("mute/create", b, ct);
+    }
+
+    /// <summary>Unmutes a user.</summary>
+    public Task UnmuteUserAsync(string userId, CancellationToken ct = default)
+        => PostVoidAsync("mute/delete", Body("userId", userId), ct);
 
     // ── Notifications ─────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Fetches the current user's notifications.
+    /// Returns the authenticated user's notifications.
+    /// Pass includeTypes/excludeTypes to filter by type
+    /// (see Misskey notificationTypes in types.ts).
     /// </summary>
     public Task<List<Notification>> GetNotificationsAsync(
         int limit = 20, string? untilId = null, string? sinceId = null,
         IEnumerable<string>? includeTypes = null, IEnumerable<string>? excludeTypes = null,
-        CancellationToken ct = default)
-        => PostAsync<List<Notification>>("i/notifications", BuildPaginationBody(limit, untilId, sinceId,
-            new { includeTypes, excludeTypes }), ct);
+        bool markAsRead = true, CancellationToken ct = default)
+    {
+        var b = Paginate(limit, untilId, sinceId);
+        b["markAsRead"] = markAsRead;
+        var inc = includeTypes?.ToList();
+        var exc = excludeTypes?.ToList();
+        if (inc?.Count > 0) b["includeTypes"] = inc;
+        if (exc?.Count > 0) b["excludeTypes"] = exc;
+        return PostAsync<List<Notification>>("i/notifications", b, ct);
+    }
+
+    /// <summary>Marks all notifications as read.</summary>
+    public Task MarkAllNotificationsReadAsync(CancellationToken ct = default)
+        => PostVoidAsync("notifications/mark-all-as-read", EmptyBody(), ct);
+
+    // ── Account settings (i/update) ───────────────────────────────────────────
 
     /// <summary>
-    /// Marks all notifications as read.
+    /// Updates the authenticated user's profile and settings.
+    /// Only set properties you want to change on the <paramref name="req"/> object.
+    /// Returns the updated MeDetailed user object.
     /// </summary>
-    public Task MarkNotificationsReadAsync(CancellationToken ct = default)
-        => PostAsync<EmptyResponse>("notifications/mark-all-as-read", new { }, ct);
+    public Task<User> UpdateAccountAsync(AccountUpdateRequest req, CancellationToken ct = default)
+    {
+        // Serialize the request to a dict, forwarding only non-null properties
+        var json = JsonSerializer.Serialize(req, JsonOpts);
+        var dict = JsonSerializer.Deserialize<Dictionary<string, object?>>(json, JsonOpts)
+                   ?? new Dictionary<string, object?>();
+        // Inject auth token
+        if (Token != null) dict["i"] = Token;
+        return PostRawAsync<User>($"{ServerUrl}/api/i/update", dict, ct);
+    }
+
+    /// <summary>
+    /// Updates per-notification-type receive configuration (who can send each type).
+    /// This is a convenience wrapper that builds an AccountUpdateRequest with only
+    /// the notificationRecieveConfig field populated.
+    /// </summary>
+    public Task<User> UpdateNotificationReceiveConfigAsync(
+        NotificationReceiveConfigMap config, CancellationToken ct = default)
+        => UpdateAccountAsync(new AccountUpdateRequest { NotificationReceiveConfig = config }, ct);
+
+    /// <summary>
+    /// Updates which notification types trigger emails.
+    /// Valid values: "mention", "reply", "quote", "reaction", "follow",
+    /// "receiveFollowRequest", "groupInvited".
+    /// </summary>
+    public Task<User> UpdateEmailNotificationTypesAsync(
+        IEnumerable<string> types, CancellationToken ct = default)
+        => UpdateAccountAsync(new AccountUpdateRequest { EmailNotificationTypes = types.ToList() }, ct);
+
+    // ── Password / Email ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Changes the current user's password.
+    /// Provide the 2FA token if the account has two-factor authentication enabled.
+    /// </summary>
+    public Task ChangePasswordAsync(
+        string currentPassword, string newPassword, string? twoFactorToken = null,
+        CancellationToken ct = default)
+    {
+        var b = new Dictionary<string, object?> { ["currentPassword"] = currentPassword, ["newPassword"] = newPassword };
+        if (twoFactorToken != null) b["token"] = twoFactorToken;
+        return PostVoidAsync("i/change-password", b, ct);
+    }
+
+    /// <summary>
+    /// Updates the email address. Requires the current password for verification.
+    /// Pass null for email to remove the address (if the server allows it).
+    /// </summary>
+    public Task<User> UpdateEmailAsync(
+        string password, string? email, string? twoFactorToken = null,
+        CancellationToken ct = default)
+    {
+        var b = new Dictionary<string, object?> { ["password"] = password, ["email"] = email };
+        if (twoFactorToken != null) b["token"] = twoFactorToken;
+        return PostAsync<User>("i/update-email", b, ct);
+    }
 
     // ── Drive ─────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Lists files in the current user's drive.
-    /// </summary>
+    /// <summary>Lists files in the authenticated user's drive.</summary>
     public Task<List<DriveFile>> GetDriveFilesAsync(
         int limit = 20, string? untilId = null, string? folderId = null,
         string? type = null, CancellationToken ct = default)
-        => PostAsync<List<DriveFile>>("drive/files", BuildPaginationBody(limit, untilId, null,
-            new { folderId, type }), ct);
+        => PostAsync<List<DriveFile>>("drive/files",
+            Paginate(limit, untilId, null,
+                ("folderId", (object?)folderId!),
+                ("type", type!)), ct);
 
-    /// <summary>
-    /// Uploads a file to the current user's drive.
-    /// </summary>
-    public async Task<DriveFile> UploadFileAsync(
+    /// <summary>Uploads a file to the authenticated user's drive.</summary>
+    public async Task<DriveFile> UploadDriveFileAsync(
         Stream fileStream, string fileName, string mimeType,
         bool isSensitive = false, string? comment = null, string? folderId = null,
         CancellationToken ct = default)
     {
-        var form = new MultipartFormDataContent();
+        using var form = new MultipartFormDataContent();
         if (Token != null) form.Add(new StringContent(Token), "i");
-        form.Add(new StreamContent(fileStream), "file", fileName);
-        form.Add(new StringContent(isSensitive.ToString().ToLower()), "isSensitive");
+        var sc = new StreamContent(fileStream);
+        sc.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mimeType);
+        form.Add(sc, "file", fileName);
+        form.Add(new StringContent(isSensitive.ToString().ToLowerInvariant()), "isSensitive");
         if (comment != null) form.Add(new StringContent(comment), "comment");
         if (folderId != null) form.Add(new StringContent(folderId), "folderId");
 
-        var response = await _http.PostAsync($"{ServerUrl}/api/drive/files/create", form, ct);
-        response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<DriveFile>(_jsonOptions, ct))!;
+        var resp = await _http.PostAsync($"{ServerUrl}/api/drive/files/create", form, ct);
+        resp.EnsureSuccessStatusCode();
+        return (await resp.Content.ReadFromJsonAsync<DriveFile>(JsonOpts, ct))!;
     }
 
     // ── ActivityPub ───────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Resolves an ActivityPub object (note or user) by its URI.
-    /// This allows viewing content from any compatible Fediverse instance.
+    /// Resolves an ActivityPub URI to a local Note or User object.
+    /// Uses the /api/ap/show endpoint (requires auth, rate-limited to 30/hour).
     /// </summary>
-    public Task<ActivityPubObject> ShowActivityPubObjectAsync(string uri, CancellationToken ct = default)
-        => PostAsync<ActivityPubObject>("ap/show", new { uri }, ct);
+    public Task<ActivityPubObject> ShowActivityPubObjectAsync(
+        string uri, CancellationToken ct = default)
+        => PostAsync<ActivityPubObject>("ap/show", Body("uri", uri), ct);
 
-    /// <summary>
-    /// Fetches a remote user's profile via ActivityPub resolution.
-    /// </summary>
-    public async Task<User?> ResolveRemoteUserAsync(string acctUri, CancellationToken ct = default)
+    /// <summary>Resolves and returns a remote user by their AP URI.</summary>
+    public async Task<User?> ResolveRemoteUserAsync(string uri, CancellationToken ct = default)
     {
-        var result = await ShowActivityPubObjectAsync(acctUri, ct);
-        if (result.Type == "User" && result.Object.HasValue)
-        {
-            return result.Object.Value.Deserialize<User>(_jsonOptions);
-        }
+        var obj = await ShowActivityPubObjectAsync(uri, ct);
+        if (obj.Type == "User" && obj.Object.HasValue)
+            return obj.Object.Value.Deserialize<User>(JsonOpts);
         return null;
     }
 
-    /// <summary>
-    /// Fetches a remote note via ActivityPub resolution.
-    /// </summary>
-    public async Task<Note?> ResolveRemoteNoteAsync(string noteUri, CancellationToken ct = default)
+    /// <summary>Resolves and returns a remote note by its AP URI.</summary>
+    public async Task<Note?> ResolveRemoteNoteAsync(string uri, CancellationToken ct = default)
     {
-        var result = await ShowActivityPubObjectAsync(noteUri, ct);
-        if (result.Type == "Note" && result.Object.HasValue)
-        {
-            return result.Object.Value.Deserialize<Note>(_jsonOptions);
-        }
+        var obj = await ShowActivityPubObjectAsync(uri, ct);
+        if (obj.Type == "Note" && obj.Object.HasValue)
+            return obj.Object.Value.Deserialize<Note>(JsonOpts);
         return null;
     }
-
-    // ── Fetch note by AP/remote URI (Sharkey supports fetching remote notes) ──
-
-    /// <summary>
-    /// Searches notes by URI (for ActivityPub lookup).
-    /// </summary>
-    public Task<List<Note>> SearchNotesByUriAsync(string uri, CancellationToken ct = default)
-        => PostAsync<List<Note>>("notes/search-by-tag", new { query = uri }, ct);
-
-    // ── Blocking / Muting ────────────────────────────────────────────────────
-
-    /// <summary>Blocks a user.</summary>
-    public Task<User> BlockUserAsync(string userId, CancellationToken ct = default)
-        => PostAsync<User>("blocking/create", new { userId }, ct);
-
-    /// <summary>Unblocks a user.</summary>
-    public Task<User> UnblockUserAsync(string userId, CancellationToken ct = default)
-        => PostAsync<User>("blocking/delete", new { userId }, ct);
-
-    /// <summary>Mutes a user.</summary>
-    public Task<EmptyResponse> MuteUserAsync(string userId, DateTimeOffset? expiresAt = null, CancellationToken ct = default)
-        => PostAsync<EmptyResponse>("mute/create", new { userId, expiresAt }, ct);
-
-    /// <summary>Unmutes a user.</summary>
-    public Task<EmptyResponse> UnmuteUserAsync(string userId, CancellationToken ct = default)
-        => PostAsync<EmptyResponse>("mute/delete", new { userId }, ct);
-
-    // ── Favourites ────────────────────────────────────────────────────────────
-
-    /// <summary>Adds a note to favourites.</summary>
-    public Task<EmptyResponse> FavouriteNoteAsync(string noteId, CancellationToken ct = default)
-        => PostAsync<EmptyResponse>("notes/favorites/create", new { noteId }, ct);
-
-    /// <summary>Removes a note from favourites.</summary>
-    public Task<EmptyResponse> UnfavouriteNoteAsync(string noteId, CancellationToken ct = default)
-        => PostAsync<EmptyResponse>("notes/favorites/delete", new { noteId }, ct);
-
-    // ── Search ────────────────────────────────────────────────────────────────
-
-    /// <summary>Searches users by query.</summary>
-    public Task<List<User>> SearchUsersAsync(
-        string query, int limit = 10, int offset = 0, bool localOnly = false, CancellationToken ct = default)
-        => PostAsync<List<User>>("users/search", new { query, limit, offset, localOnly }, ct);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private object BuildPaginationBody(int limit, string? untilId, string? sinceId, object? extra = null)
+    private static Dictionary<string, object?> EmptyBody() => new();
+
+    private static Dictionary<string, object?> Body<T>(string key, T value)
+        => new() { [key] = value };
+
+    /// <summary>
+    /// Builds a pagination body dict. Additional key-value tuples are merged in,
+    /// ignoring any whose value is null.
+    /// </summary>
+    private static Dictionary<string, object?> Paginate(
+        int limit, string? untilId, string? sinceId,
+        params (string key, object? value)[] extra)
     {
-        var dict = new Dictionary<string, object?> { ["limit"] = limit };
-        if (untilId != null) dict["untilId"] = untilId;
-        if (sinceId != null) dict["sinceId"] = sinceId;
-
-        if (extra != null)
-        {
-            foreach (var prop in extra.GetType().GetProperties())
-            {
-                var val = prop.GetValue(extra);
-                if (val != null) dict[prop.Name] = val;
-            }
-        }
-
-        return dict;
+        var d = new Dictionary<string, object?> { ["limit"] = limit };
+        if (untilId != null) d["untilId"] = untilId;
+        if (sinceId != null) d["sinceId"] = sinceId;
+        foreach (var (k, v) in extra)
+            if (v != null) d[k] = v;
+        return d;
     }
 
-    private async Task<T> PostAsync<T>(string endpoint, object body, CancellationToken ct)
+    private async Task<T> PostAsync<T>(string endpoint, Dictionary<string, object?> body, CancellationToken ct)
+        => await PostRawAsync<T>($"{ServerUrl}/api/{endpoint}", body, ct);
+
+    private async Task PostVoidAsync(string endpoint, Dictionary<string, object?> body, CancellationToken ct)
     {
-        var url = $"{ServerUrl}/api/{endpoint}";
-        return await PostRawAsync<T>(url, body, ct);
+        if (Token != null) body["i"] = Token;
+        var resp = await _http.PostAsJsonAsync($"{ServerUrl}/api/{endpoint}", body, JsonOpts, ct);
+        if (!resp.IsSuccessStatusCode)
+            throw new MisskeyApiException(resp.StatusCode, await resp.Content.ReadAsStringAsync(ct));
     }
 
-    private async Task<T> PostRawAsync<T>(string url, object body, CancellationToken ct)
+    private async Task<T> PostRawAsync<T>(string url, Dictionary<string, object?> body, CancellationToken ct)
     {
-        // Merge the auth token into the request body
-        var dict = MergeWithToken(body);
-        var response = await _http.PostAsJsonAsync(url, dict, _jsonOptions, ct);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var error = await response.Content.ReadAsStringAsync(ct);
-            throw new MisskeyApiException(response.StatusCode, error);
-        }
-
-        // Some endpoints return 204 No Content
-        if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+        if (Token != null) body["i"] = Token;
+        var resp = await _http.PostAsJsonAsync(url, body, JsonOpts, ct);
+        if (!resp.IsSuccessStatusCode)
+            throw new MisskeyApiException(resp.StatusCode, await resp.Content.ReadAsStringAsync(ct));
+        if (resp.StatusCode == System.Net.HttpStatusCode.NoContent)
             return default!;
-
-        return (await response.Content.ReadFromJsonAsync<T>(_jsonOptions, ct))!;
-    }
-
-    private Dictionary<string, object?> MergeWithToken(object body)
-    {
-        var dict = new Dictionary<string, object?>();
-        if (Token != null) dict["i"] = Token;
-
-        foreach (var prop in body.GetType().GetProperties())
-            dict[prop.Name] = prop.GetValue(body);
-
-        // Handle Dictionary input too
-        if (body is Dictionary<string, object?> bodyDict)
-        {
-            dict.Clear();
-            if (Token != null) dict["i"] = Token;
-            foreach (var kv in bodyDict) dict[kv.Key] = kv.Value;
-        }
-
-        return dict;
+        return (await resp.Content.ReadFromJsonAsync<T>(JsonOpts, ct))!;
     }
 }
 
-// ── Supporting response types ────────────────────────────────────────────────
+// ── Response / helper types ──────────────────────────────────────────────────
 
 public class CreateNoteResponse
 {
-    [System.Text.Json.Serialization.JsonPropertyName("createdNote")]
+    [JsonPropertyName("createdNote")]
     public Note CreatedNote { get; set; } = null!;
 }
 
 public class EmojisResponse
 {
-    [System.Text.Json.Serialization.JsonPropertyName("emojis")]
+    [JsonPropertyName("emojis")]
     public List<Emoji> Emojis { get; set; } = new();
 }
 
 public class ReactionEntry
 {
-    [System.Text.Json.Serialization.JsonPropertyName("id")]
+    [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 
-    [System.Text.Json.Serialization.JsonPropertyName("createdAt")]
+    [JsonPropertyName("createdAt")]
     public DateTimeOffset CreatedAt { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("user")]
+    [JsonPropertyName("user")]
     public User User { get; set; } = null!;
 
-    [System.Text.Json.Serialization.JsonPropertyName("type")]
+    [JsonPropertyName("type")]
     public string Type { get; set; } = string.Empty;
 }
 
 public class FollowEntry
 {
-    [System.Text.Json.Serialization.JsonPropertyName("id")]
+    [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 
-    [System.Text.Json.Serialization.JsonPropertyName("createdAt")]
+    [JsonPropertyName("createdAt")]
     public DateTimeOffset CreatedAt { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("followerId")]
+    [JsonPropertyName("followerId")]
     public string FollowerId { get; set; } = string.Empty;
 
-    [System.Text.Json.Serialization.JsonPropertyName("followeeId")]
+    [JsonPropertyName("followeeId")]
     public string FolloweeId { get; set; } = string.Empty;
 
-    [System.Text.Json.Serialization.JsonPropertyName("follower")]
+    [JsonPropertyName("follower")]
     public User? Follower { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("followee")]
+    [JsonPropertyName("followee")]
     public User? Followee { get; set; }
 }
 
 public class FollowResponse
 {
-    [System.Text.Json.Serialization.JsonPropertyName("id")]
+    [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 }
 
-public class EmptyResponse { }
-
 /// <summary>
-/// Thrown when the Misskey/Sharkey API returns a non-success status code.
+/// Relationship between the authenticated user and another user.
+/// Returned by users/relation.
 /// </summary>
+public class UserRelation
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("isFollowing")]
+    public bool IsFollowing { get; set; }
+
+    [JsonPropertyName("isFollowed")]
+    public bool IsFollowed { get; set; }
+
+    [JsonPropertyName("hasPendingFollowRequestFromYou")]
+    public bool HasPendingFollowRequestFromYou { get; set; }
+
+    [JsonPropertyName("hasPendingFollowRequestToYou")]
+    public bool HasPendingFollowRequestToYou { get; set; }
+
+    [JsonPropertyName("isBlocking")]
+    public bool IsBlocking { get; set; }
+
+    [JsonPropertyName("isBlocked")]
+    public bool IsBlocked { get; set; }
+
+    [JsonPropertyName("isMuted")]
+    public bool IsMuted { get; set; }
+
+    [JsonPropertyName("isRenoteMuted")]
+    public bool IsRenoteMuted { get; set; }
+}
+
+/// <summary>Thrown when the Misskey/Sharkey API returns a non-success status code.</summary>
 public class MisskeyApiException : Exception
 {
     public System.Net.HttpStatusCode StatusCode { get; }
