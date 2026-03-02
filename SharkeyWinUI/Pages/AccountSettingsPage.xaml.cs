@@ -22,6 +22,7 @@ public sealed partial class AccountSettingsPage : Page
     {
         base.OnNavigatedFrom(e);
         _cts.Cancel();
+        _cts.Dispose();
         _cts = new CancellationTokenSource();
     }
 

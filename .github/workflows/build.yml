@@ -8,11 +8,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# Allow creating releases from tags
 env:
   SOLUTION: SharkeyWinUI/SharkeyWinUI.csproj
   CONFIGURATION: Release
-  TFM: net8.0-windows10.0.19041.0
   RUNTIME: win-x64
 
 jobs:
@@ -30,14 +28,16 @@ jobs:
         with:
           fetch-depth: 0       # full history for version stamping
 
-      # 2. Install the Windows App SDK workload
+      # 2. Set up .NET 8 SDK (global.json in the repo also enforces this)
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: Install Windows App SDK workload
-        run: dotnet workload install microsoft-net-sdk-windowsappsdk
+      # NOTE: The Windows App SDK is delivered via the Microsoft.WindowsAppSDK
+      # NuGet package (v1.5+). A separate 'dotnet workload install' step is NOT
+      # required and has been intentionally removed — the workload ID changed
+      # between SDK generations and is unreliable on hosted runners.
 
       # 3. Cache NuGet packages
       - name: Cache NuGet
@@ -52,29 +52,36 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore ${{ env.SOLUTION }}
 
-      # 5. Build
+      # 5. Build (no MSIX generation — that is handled by the package job)
       - name: Build
         run: >
           dotnet build ${{ env.SOLUTION }}
           --configuration ${{ env.CONFIGURATION }}
           --no-restore
           -p:RuntimeIdentifier=${{ env.RUNTIME }}
+          -p:AppxPackageSigningEnabled=false
+          -p:GenerateAppxPackageOnBuild=false
 
-      # 6. Run tests (if any test projects exist)
+      # 6. Run tests — skip gracefully when no test projects exist
       - name: Test
-        run: >
-          dotnet test
-          --configuration ${{ env.CONFIGURATION }}
-          --no-build
-          --verbosity normal
-          --logger "trx;LogFileName=test-results.trx"
-        continue-on-error: false  # fail the build if tests fail
-        # Only runs if test projects are found; skip gracefully if there are none
         shell: pwsh
         env:
           DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+        run: |
+          $testProjects = Get-ChildItem -Recurse -Filter "*.csproj" |
+            Where-Object { (Get-Content $_.FullName -Raw) -match "Microsoft\.NET\.Test\.Sdk|xunit|NUnit|MSTest" }
+          if ($testProjects.Count -gt 0) {
+            dotnet test `
+              --configuration ${{ env.CONFIGURATION }} `
+              --no-build `
+              --verbosity normal `
+              --logger "trx;LogFileName=test-results.trx"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } else {
+            Write-Host "No test projects found — skipping tests."
+          }
 
-      # 7. Upload test results
+      # 7. Upload test results (if any were produced)
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -104,8 +111,7 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Install Windows App SDK workload
-        run: dotnet workload install microsoft-net-sdk-windowsappsdk
+      # NOTE: No 'dotnet workload install' — see build job comment above.
 
       - name: Cache NuGet
         uses: actions/cache@v4
@@ -118,7 +124,7 @@ jobs:
       - name: Restore
         run: dotnet restore ${{ env.SOLUTION }}
 
-      # Compute a version number: use the git tag (vX.Y.Z) or a build timestamp
+      # Compute a version number: use the git tag (vX.Y.Z) or fall back to 0.0.1
       - name: Compute version
         id: version
         shell: pwsh
@@ -130,8 +136,8 @@ jobs:
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           echo "Version: $version"
 
-      # Build a self-contained single-file publish for side-loading
-      - name: Publish (self-contained)
+      # Build a self-contained MSIX for side-loading
+      - name: Publish (self-contained MSIX)
         run: >
           dotnet publish ${{ env.SOLUTION }}
           --configuration ${{ env.CONFIGURATION }}
@@ -186,3 +192,4 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
+

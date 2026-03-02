@@ -34,6 +34,11 @@ public class MisskeyStreamingService : IDisposable
     private readonly Dictionary<string, string> _channelIds = new(); // channelName -> id
     private int _idCounter;
 
+    // Per Microsoft Learn — ClientWebSocket.SendAsync is not thread-safe
+    // for concurrent calls; one send at a time must be enforced.
+    // https://learn.microsoft.com/en-us/dotnet/api/system.net.websockets.clientwebsocket
+    private readonly SemaphoreSlim _sendLock = new(1, 1);
+
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -70,13 +75,18 @@ public class MisskeyStreamingService : IDisposable
     {
         _cts?.Cancel();
         _channelIds.Clear();
-        if (_ws?.State == WebSocketState.Open)
+
+        if (_ws != null)
         {
-            try { _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "bye", CancellationToken.None).Wait(1000); }
-            catch { /* ignore */ }
+            // Per Microsoft Learn: do not block the UI thread.
+            // ClientWebSocket.Abort() closes the connection immediately and
+            // synchronously without sending a close handshake frame.
+            // https://learn.microsoft.com/en-us/dotnet/api/system.net.websockets.clientwebsocket.abort
+            try { _ws.Abort(); } catch { /* ignore */ }
+            _ws.Dispose();
+            _ws = null;
         }
-        _ws?.Dispose();
-        _ws = null;
+
         _cts?.Dispose();
         _cts = null;
     }
@@ -130,7 +140,19 @@ public class MisskeyStreamingService : IDisposable
     {
         if (_ws?.State != WebSocketState.Open) return;
         var bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(payload, JsonOpts));
-        await _ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, ct);
+
+        // Acquire the send lock — ClientWebSocket requires one outstanding send at a time.
+        await _sendLock.WaitAsync(ct);
+        try
+        {
+            // Re-check state after acquiring the lock
+            if (_ws?.State == WebSocketState.Open)
+                await _ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, ct);
+        }
+        finally
+        {
+            _sendLock.Release();
+        }
     }
 
     private async Task ReceiveLoopAsync(CancellationToken ct)
@@ -149,6 +171,7 @@ public class MisskeyStreamingService : IDisposable
                     result = await _ws.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
                     if (result.MessageType == WebSocketMessageType.Close)
                     {
+                        // Remote side closed — fire once here then exit
                         Disconnected?.Invoke();
                         return;
                     }
@@ -159,10 +182,13 @@ public class MisskeyStreamingService : IDisposable
                 HandleMessage(sb.ToString());
             }
         }
-        catch (OperationCanceledException) { }
-        catch (WebSocketException) { }
-        finally
+        catch (OperationCanceledException)
         {
+            // Intentional disconnect — do not fire the Disconnected event
+        }
+        catch (WebSocketException)
+        {
+            // Unexpected network error — signal callers
             Disconnected?.Invoke();
         }
     }

@@ -35,6 +35,7 @@ public sealed partial class NoteDetailPage : Page
         // is never called with a disposed CancellationTokenSource.
         App.Streaming.NoteUpdated -= OnNoteUpdated;
         _cts.Cancel();
+        _cts.Dispose();
         _cts = new CancellationTokenSource();
 
         if (_noteId != null)

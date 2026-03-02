@@ -49,6 +49,7 @@ public sealed partial class TimelinePage : Page
     {
         base.OnNavigatedFrom(e);
         _cts.Cancel();
+        _cts.Dispose();
         _cts = new CancellationTokenSource();
         // Unsubscribe this timeline channel from streaming
         _ = UnsubscribeStreamAsync();

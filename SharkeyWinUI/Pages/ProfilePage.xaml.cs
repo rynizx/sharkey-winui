@@ -41,6 +41,7 @@ public sealed partial class ProfilePage : Page
     {
         base.OnNavigatedFrom(e);
         _cts.Cancel();
+        _cts.Dispose();
         _cts = new CancellationTokenSource();
     }
 

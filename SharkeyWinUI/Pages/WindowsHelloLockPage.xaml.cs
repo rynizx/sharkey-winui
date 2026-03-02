@@ -13,6 +13,12 @@ namespace SharkeyWinUI.Pages;
 /// </summary>
 public sealed partial class WindowsHelloLockPage : Page
 {
+    // Cancelled when the page is navigated away from, preventing the
+    // async-void OnNavigatedTo continuation from running on a "zombie" page.
+    // Per Microsoft Learn: https://learn.microsoft.com/en-us/windows/apps/winui/winui3/
+    // (Page lifecycle — OnNavigatedFrom)
+    private CancellationTokenSource _pageCts = new();
+
     public WindowsHelloLockPage()
     {
         InitializeComponent();
@@ -23,10 +29,25 @@ public sealed partial class WindowsHelloLockPage : Page
         base.OnNavigatedTo(e);
         PopulateAccountInfo();
 
-        // Auto-prompt on arrival so the user only needs one click
-        // Give the page 200 ms to fully render first
-        await Task.Delay(200);
-        await TryHelloUnlockAsync();
+        // Auto-prompt on arrival so the user only needs one click.
+        // Give the page 200 ms to fully render first.
+        try
+        {
+            await Task.Delay(200, _pageCts.Token);
+            await TryHelloUnlockAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // Page was navigated away before the delay completed — stop here.
+        }
+    }
+
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        _pageCts.Cancel();
+        _pageCts.Dispose();
+        _pageCts = new CancellationTokenSource();
     }
 
     private void PopulateAccountInfo()

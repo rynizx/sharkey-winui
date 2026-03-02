@@ -41,6 +41,7 @@ public sealed partial class NotificationsPage : Page
         base.OnNavigatedFrom(e);
         App.Streaming.NotificationReceived -= OnStreamNotification;
         _cts.Cancel();
+        _cts.Dispose();
         _cts = new CancellationTokenSource();
     }
 
@@ -182,10 +183,21 @@ internal sealed class NotificationIconConverter : IValueConverter
 
 internal sealed class ReadBrushConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, string language) =>
-        value is bool isRead && !isRead
-            ? Application.Current.Resources["LayerFillColorDefaultBrush"]
-            : Application.Current.Resources["ApplicationPageBackgroundThemeBrush"];
+    // Per MS Learn: ResourceDictionary lookups can return null if the key is
+    // absent in the current theme. Cast defensively and provide a fallback.
+    // https://learn.microsoft.com/en-us/windows/apps/design/style/xaml-resource-dictionary
+    private static Microsoft.UI.Xaml.Media.Brush Fallback =>
+        new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
+
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is bool isRead && !isRead)
+            return Application.Current.Resources["LayerFillColorDefaultBrush"]
+                   as Microsoft.UI.Xaml.Media.Brush ?? Fallback;
+
+        return Application.Current.Resources["ApplicationPageBackgroundThemeBrush"]
+               as Microsoft.UI.Xaml.Media.Brush ?? Fallback;
+    }
 
     public object ConvertBack(object v, Type t, object p, string l) => throw new NotImplementedException();
 }
