@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="SharkeyWinUI.Pages.NotificationSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <ScrollViewer>
+        <StackPanel MaxWidth="640" HorizontalAlignment="Center" Padding="24" Spacing="8">
+
+            <TextBlock Text="Notification Settings"
+                       Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8" />
+
+            <InfoBar x:Name="StatusBar" IsOpen="False" IsClosable="True" />
+            <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Visibility="Collapsed" />
+
+            <!-- ── Per-type receive config ──────────────────────────────────── -->
+            <TextBlock Text="Who can send each notification type"
+                       Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,12,0,4" />
+            <TextBlock TextWrapping="Wrap"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Style="{StaticResource CaptionTextBlockStyle}">
+                Control which users can trigger each type of notification for you.
+                "All" means everyone; "Never" disables the notification type entirely.
+            </TextBlock>
+
+            <!-- One row per notification type -->
+            <ItemsControl x:Name="ReceiveConfigList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="0,6" ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="180" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                            <ComboBox Grid.Column="1"
+                                      HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding Options}"
+                                      SelectedItem="{Binding SelectedOption, Mode=TwoWay}" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- ── Email notification types ───────────────────────────────── -->
+            <TextBlock Text="Email notifications"
+                       Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,20,0,4" />
+            <TextBlock TextWrapping="Wrap"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       Style="{StaticResource CaptionTextBlockStyle}">
+                Choose which events send you an email (requires a verified email address on the server).
+            </TextBlock>
+
+            <StackPanel x:Name="EmailTypesPanel" Spacing="4" />
+
+            <!-- ── Save ───────────────────────────────────────────────────── -->
+            <Button x:Name="SaveButton"
+                    Content="Save notification settings"
+                    Style="{StaticResource AccentButtonStyle}"
+                    HorizontalAlignment="Right"
+                    Margin="0,16,0,0"
+                    Click="SaveButton_Click" />
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

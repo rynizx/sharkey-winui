@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="SharkeyWinUI.Pages.NotificationsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:SharkeyWinUI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Padding="16,12" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Notifications" Style="{StaticResource SubtitleTextBlockStyle}"
+                       VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="Mark all read"
+                    Click="MarkAllReadButton_Click" />
+            <Button Grid.Column="2" Content="&#xE72C;"
+                    FontFamily="{StaticResource SymbolThemeFontFamily}"
+                    ToolTipService.ToolTip="Refresh"
+                    Click="RefreshButton_Click" />
+        </Grid>
+
+        <!-- Type filter chips -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollMode="Enabled"
+                      VerticalScrollMode="Disabled" HorizontalScrollBarVisibility="Hidden">
+            <StackPanel x:Name="FilterChipsPanel" Orientation="Horizontal" Spacing="6" Padding="16,0,16,8">
+                <ToggleButton x:Name="FilterAll" Content="All" IsChecked="True"
+                              Click="FilterChip_Click" Tag="" />
+                <ToggleButton Content="Follows"    Tag="follow"                Click="FilterChip_Click" />
+                <ToggleButton Content="Mentions"   Tag="mention"               Click="FilterChip_Click" />
+                <ToggleButton Content="Replies"    Tag="reply"                 Click="FilterChip_Click" />
+                <ToggleButton Content="Renotes"    Tag="renote"                Click="FilterChip_Click" />
+                <ToggleButton Content="Quotes"     Tag="quote"                 Click="FilterChip_Click" />
+                <ToggleButton Content="Reactions"  Tag="reaction"              Click="FilterChip_Click" />
+                <ToggleButton Content="Polls"      Tag="pollEnded"             Click="FilterChip_Click" />
+                <ToggleButton Content="Requests"   Tag="receiveFollowRequest"  Click="FilterChip_Click" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <InfoBar x:Name="ErrorBar" Grid.Row="2" IsOpen="False" IsClosable="True" Severity="Error" />
+
+        <ListView x:Name="NotifList" Grid.Row="3"
+                  SelectionMode="None"
+                  IsItemClickEnabled="True"
+                  ItemClick="NotifList_ItemClick">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Padding" Value="0" />
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="16,10" ColumnSpacing="12"
+                          Background="{Binding IsRead, Converter={StaticResource ReadBrushConverter}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Type icon -->
+                        <FontIcon Glyph="{Binding Type, Converter={StaticResource NotifIconConverter}}"
+                                  FontSize="18" VerticalAlignment="Center" />
+
+                        <!-- Content -->
+                        <StackPanel Grid.Column="1" Spacing="2">
+                            <TextBlock Text="{Binding Summary}"
+                                       TextTrimming="CharacterEllipsis" MaxLines="2"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding Note.DisplayText}"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       TextTrimming="CharacterEllipsis" MaxLines="1"
+                                       Visibility="{Binding Note, Converter={StaticResource NullVisibilityConverter}}" />
+                        </StackPanel>
+
+                        <!-- Time -->
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding CreatedAt, Converter={StaticResource RelTimeConverter}}"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   VerticalAlignment="Top" />
+
+                        <!-- Unread dot -->
+                        <Ellipse Width="8" Height="8"
+                                 Fill="{ThemeResource AccentFillColorDefaultBrush}"
+                                 VerticalAlignment="Top" HorizontalAlignment="Right"
+                                 Grid.Column="2" Margin="0,16,0,0"
+                                 Visibility="{Binding IsRead, Converter={StaticResource UnreadVisibilityConverter}}" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+            <ListView.Footer>
+                <Button x:Name="LoadMoreButton" Content="Load more"
+                        HorizontalAlignment="Center" Margin="0,8,0,16"
+                        Click="LoadMoreButton_Click" />
+            </ListView.Footer>
+        </ListView>
+
+        <ProgressBar x:Name="LoadingBar" Grid.Row="4" IsIndeterminate="True" Visibility="Collapsed" />
+    </Grid>
+</Page>

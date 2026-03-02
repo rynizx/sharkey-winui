@@ -4,7 +4,8 @@ namespace SharkeyWinUI.Models;
 
 /// <summary>
 /// Controls who can send a given notification type to the current user.
-/// Mirrors the Misskey notificationRecieveConfig schema (note: Misskey spells it "Recieve").
+/// Note: Misskey intentionally spells the JSON field "notificationRecieveConfig"
+/// (typo preserved for API compatibility).
 /// </summary>
 public class NotificationReceiveConfig
 {

@@ -373,13 +373,11 @@ public class MisskeyApiClient
     /// </summary>
     public Task<User> UpdateAccountAsync(AccountUpdateRequest req, CancellationToken ct = default)
     {
-        // Serialize the request to a dict, forwarding only non-null properties
+        // Serialize to a dict, forwarding only non-null properties
         var json = JsonSerializer.Serialize(req, JsonOpts);
         var dict = JsonSerializer.Deserialize<Dictionary<string, object?>>(json, JsonOpts)
                    ?? new Dictionary<string, object?>();
-        // Inject auth token
-        if (Token != null) dict["i"] = Token;
-        return PostRawAsync<User>($"{ServerUrl}/api/i/update", dict, ct);
+        return PostAsync<User>("i/update", dict, ct);
     }
 
     /// <summary>

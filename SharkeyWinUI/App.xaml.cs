@@ -8,10 +8,12 @@ namespace SharkeyWinUI;
 /// </summary>
 public partial class App : Application
 {
-    private Window? _window;
+    public static MisskeyApiClient ApiClient { get; } = new();
+    public static AuthService AuthService { get; } = new();
+    public static MisskeyStreamingService Streaming { get; set; } = new();
 
-    public static MisskeyApiClient ApiClient { get; private set; } = new();
-    public static AuthService AuthService { get; private set; } = new();
+    /// <summary>Reference to the main window, set in <see cref="OnLaunched"/>.</summary>
+    public static MainWindow? MainWindow { get; private set; }
 
     /// <summary>
     /// Initializes the singleton application object.
@@ -19,6 +21,8 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
+        // Restore saved credentials so IsAuthenticated is correct before the window opens.
+        AuthService.TryRestoreSession();
     }
 
     /// <summary>
@@ -26,7 +30,7 @@ public partial class App : Application
     /// </summary>
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        _window = new MainWindow();
-        _window.Activate();
+        MainWindow = new MainWindow();
+        MainWindow.Activate();
     }
 }

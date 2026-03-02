@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="SharkeyWinUI.Pages.NoteDetailPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:SharkeyWinUI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <ScrollViewer>
+        <StackPanel>
+
+            <!-- Loading / error -->
+            <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Visibility="Collapsed" />
+            <InfoBar x:Name="ErrorBar" IsOpen="False" IsClosable="True" Severity="Error" />
+
+            <!-- Root note -->
+            <controls:NoteCard x:Name="RootNoteCard"
+                               BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                               BorderThickness="0,0,0,1" />
+
+            <!-- Replies header -->
+            <TextBlock Text="Replies"
+                       Style="{StaticResource BodyStrongTextBlockStyle}"
+                       Margin="16,12,16,4" />
+
+            <!-- Replies list -->
+            <ItemsControl x:Name="RepliesList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <controls:NoteCard Note="{Binding}"
+                                           BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                           BorderThickness="0,0,0,1"
+                                           Margin="16,0,0,0" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Load more replies -->
+            <Button x:Name="LoadMoreRepliesButton"
+                    Content="Load more replies"
+                    HorizontalAlignment="Center"
+                    Margin="0,8,0,16"
+                    Visibility="Collapsed"
+                    Click="LoadMoreRepliesButton_Click" />
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

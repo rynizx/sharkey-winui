@@ -129,7 +129,46 @@ public class User
     [JsonPropertyName("followersVisibility")]
     public string? FollowersVisibility { get; set; }
 
-    // Relationship fields (present in some endpoints)
+    // ── MeDetailed-only fields (present when fetching own profile via i/) ──────
+
+    [JsonPropertyName("isExplorable")]
+    public bool IsExplorable { get; set; }
+
+    [JsonPropertyName("hideOnlineStatus")]
+    public bool HideOnlineStatus { get; set; }
+
+    [JsonPropertyName("publicReactions")]
+    public bool PublicReactions { get; set; }
+
+    [JsonPropertyName("preventAiLearning")]
+    public bool PreventAiLearning { get; set; }
+
+    [JsonPropertyName("noCrawle")]
+    public bool NoCrawle { get; set; }
+
+    /// <summary>
+    /// Muted word rules. Each element is either a <c>string</c> (single term /
+    /// regex) or a <c>List&lt;object&gt;</c> (all words must match).
+    /// </summary>
+    [JsonPropertyName("mutedWords")]
+    public List<object> MutedWords { get; set; } = new();
+
+    [JsonPropertyName("mutedInstances")]
+    public List<string> MutedInstances { get; set; } = new();
+
+    /// <summary>Per-notification-type receive configuration (MeDetailed only).</summary>
+    /// <remarks>
+    /// The JSON field name is "notificationRecieveConfig" — this is a deliberate
+    /// spelling preserved from the Misskey API for wire-format compatibility.
+    /// </remarks>
+    [JsonPropertyName("notificationRecieveConfig")]
+    public NotificationReceiveConfigMap? NotificationReceiveConfig { get; set; }
+
+    /// <summary>Notification types that trigger emails (MeDetailed only).</summary>
+    [JsonPropertyName("emailNotificationTypes")]
+    public List<string> EmailNotificationTypes { get; set; } = new();
+
+    // ── Relationship fields (present in some endpoints) ───────────────────────
     [JsonPropertyName("isFollowing")]
     public bool IsFollowing { get; set; }
 
@@ -162,6 +201,10 @@ public class User
 
     [JsonIgnore]
     public string EffectiveName => DisplayName ?? Username;
+
+    /// <summary>Alias for <see cref="DisplayName"/> — matches the Misskey API field name.</summary>
+    [JsonIgnore]
+    public string? Name => DisplayName;
 
     [JsonIgnore]
     public bool IsRemote => Host != null;

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="SharkeyWinUI.Pages.AccountSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <ScrollViewer>
+        <StackPanel MaxWidth="640" HorizontalAlignment="Center" Padding="24" Spacing="4">
+
+            <TextBlock Text="Account Settings"
+                       Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8" />
+
+            <InfoBar x:Name="StatusBar" IsOpen="False" IsClosable="True" />
+            <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Visibility="Collapsed" />
+
+            <!-- ── Profile ──────────────────────────────────────────────── -->
+            <Expander Header="Profile" IsExpanded="True" HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Stretch">
+                <StackPanel Spacing="12" Padding="0,8,0,8">
+
+                    <TextBox x:Name="DisplayNameBox" Header="Display name"
+                             PlaceholderText="Your display name" MaxLength="50" />
+                    <TextBox x:Name="DescriptionBox" Header="Bio"
+                             PlaceholderText="About yourself…"
+                             AcceptsReturn="True" TextWrapping="Wrap"
+                             MinHeight="80" MaxLength="1500" />
+                    <TextBox x:Name="LocationBox" Header="Location"
+                             PlaceholderText="e.g. Tokyo, Japan" MaxLength="50" />
+                    <DatePicker x:Name="BirthdayPicker" Header="Birthday" />
+                    <ComboBox x:Name="LangBox" Header="Language (interface hint)"
+                              HorizontalAlignment="Stretch">
+                        <ComboBoxItem Content="(not set)" Tag="" IsSelected="True" />
+                        <ComboBoxItem Content="English" Tag="en-US" />
+                        <ComboBoxItem Content="日本語" Tag="ja-JP" />
+                        <ComboBoxItem Content="Deutsch" Tag="de-DE" />
+                        <ComboBoxItem Content="Français" Tag="fr-FR" />
+                        <ComboBoxItem Content="Español" Tag="es-ES" />
+                        <ComboBoxItem Content="简体中文" Tag="zh-CN" />
+                        <ComboBoxItem Content="繁體中文" Tag="zh-TW" />
+                        <ComboBoxItem Content="한국어" Tag="ko-KR" />
+                        <ComboBoxItem Content="Русский" Tag="ru-RU" />
+                    </ComboBox>
+
+                    <Button Content="Save profile" Style="{StaticResource AccentButtonStyle}"
+                            Click="SaveProfileButton_Click" />
+                </StackPanel>
+            </Expander>
+
+            <!-- ── Privacy ──────────────────────────────────────────────── -->
+            <Expander Header="Privacy" HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Stretch">
+                <StackPanel Spacing="12" Padding="0,8,0,8">
+
+                    <ToggleSwitch x:Name="IsLockedSwitch"
+                                  Header="Lock account (approve followers)"
+                                  OffContent="Open" OnContent="Locked" />
+                    <ToggleSwitch x:Name="IsExplorableSwitch"
+                                  Header="Appear in explore / trending"
+                                  OffContent="Hidden" OnContent="Visible" />
+                    <ToggleSwitch x:Name="HideOnlineStatusSwitch"
+                                  Header="Hide online/active status"
+                                  OffContent="Visible" OnContent="Hidden" />
+                    <ToggleSwitch x:Name="PublicReactionsSwitch"
+                                  Header="Public reactions"
+                                  OffContent="Private" OnContent="Public" />
+                    <ToggleSwitch x:Name="PreventAiSwitch"
+                                  Header="Prevent AI training services"
+                                  OffContent="Off" OnContent="On" />
+                    <ToggleSwitch x:Name="NoCrawleSwitch"
+                                  Header="Block search engine indexing"
+                                  OffContent="Off" OnContent="On" />
+
+                    <ComboBox x:Name="FollowingVisBox" Header="Following list visibility"
+                              HorizontalAlignment="Stretch">
+                        <ComboBoxItem Content="Public" Tag="public" IsSelected="True" />
+                        <ComboBoxItem Content="Followers only" Tag="followers" />
+                        <ComboBoxItem Content="Private" Tag="private" />
+                    </ComboBox>
+                    <ComboBox x:Name="FollowersVisBox" Header="Followers list visibility"
+                              HorizontalAlignment="Stretch">
+                        <ComboBoxItem Content="Public" Tag="public" IsSelected="True" />
+                        <ComboBoxItem Content="Followers only" Tag="followers" />
+                        <ComboBoxItem Content="Private" Tag="private" />
+                    </ComboBox>
+
+                    <Button Content="Save privacy settings"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Click="SavePrivacyButton_Click" />
+                </StackPanel>
+            </Expander>
+
+            <!-- ── Muted words ───────────────────────────────────────────── -->
+            <Expander Header="Muted words" HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Stretch">
+                <StackPanel Spacing="8" Padding="0,8,0,8">
+                    <TextBlock TextWrapping="Wrap"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Style="{StaticResource CaptionTextBlockStyle}">
+                        One entry per line. Use spaces between words to mute notes
+                        containing ALL those words. Use a single word to mute any note
+                        containing that word.
+                    </TextBlock>
+                    <TextBox x:Name="MutedWordsBox"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="100"
+                             PlaceholderText="word1&#x0a;bad phrase here&#x0a;another term" />
+                    <TextBox x:Name="MutedInstancesBox"
+                             Header="Muted instances (one hostname per line)"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="60"
+                             PlaceholderText="spam.example.com" />
+                    <Button Content="Save muted words"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Click="SaveMutedWordsButton_Click" />
+                </StackPanel>
+            </Expander>
+
+            <!-- ── Security ──────────────────────────────────────────────── -->
+            <Expander Header="Security" HorizontalAlignment="Stretch"
+                      HorizontalContentAlignment="Stretch">
+                <StackPanel Spacing="12" Padding="0,8,0,8">
+
+                    <!-- Change password -->
+                    <TextBlock Text="Change password"
+                               Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <PasswordBox x:Name="CurrentPasswordBox"
+                                 Header="Current password"
+                                 PlaceholderText="Enter current password" />
+                    <PasswordBox x:Name="NewPasswordBox"
+                                 Header="New password"
+                                 PlaceholderText="At least 8 characters" />
+                    <PasswordBox x:Name="ConfirmPasswordBox"
+                                 Header="Confirm new password"
+                                 PlaceholderText="Repeat new password" />
+                    <TextBox x:Name="PasswordTwoFactorBox"
+                             Header="2FA token (if enabled)"
+                             PlaceholderText="6-digit code" />
+                    <Button Content="Change password"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Click="ChangePasswordButton_Click" />
+
+                    <MenuFlyoutSeparator Margin="0,8" />
+
+                    <!-- Change email -->
+                    <TextBlock Text="Change email address"
+                               Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <TextBox x:Name="NewEmailBox"
+                             Header="New email address"
+                             PlaceholderText="you@example.com"
+                             InputScope="EmailSmtpAddress" />
+                    <PasswordBox x:Name="EmailPasswordBox"
+                                 Header="Current password (required to change email)"
+                                 PlaceholderText="Enter current password" />
+                    <Button Content="Update email"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Click="ChangeEmailButton_Click" />
+
+                </StackPanel>
+            </Expander>
+
+            <!-- ── Notification settings link ────────────────────────────── -->
+            <HyperlinkButton Content="▸ Notification settings"
+                             Margin="0,8,0,0"
+                             Click="OpenNotifSettingsButton_Click" />
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>
