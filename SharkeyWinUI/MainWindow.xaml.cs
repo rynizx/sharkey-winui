@@ -125,7 +125,7 @@ public sealed partial class MainWindow : Window
         try
         {
             var url   = App.AuthService.ServerUrl!;
-            var token = App.AuthService.Token!;
+            var token = App.ApiClient.Token!;
             await _streaming.ConnectAsync(url, token);
             await _streaming.SubscribeChannelAsync("main");
             await _streaming.SubscribeChannelAsync("homeTimeline");

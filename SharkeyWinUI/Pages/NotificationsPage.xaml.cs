@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Navigation;
 using SharkeyWinUI.Models;
@@ -162,7 +163,7 @@ internal sealed class RelativeTimeConverter : IValueConverter
 internal sealed class NotificationIconConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language) =>
-        value as string switch
+        (value as string) switch
         {
             "follow"                => "\uE8FA",
             "followRequestAccepted" => "\uE8FB",
