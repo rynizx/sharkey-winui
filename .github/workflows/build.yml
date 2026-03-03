@@ -145,6 +145,7 @@ jobs:
           $version = "$tag.$build"
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Version: $version"
+          exit 0
 
       # Build a self-contained MSIX for side-loading
       - name: Publish (self-contained MSIX)
