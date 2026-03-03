@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="SharkeyWinUI.Pages.LoginPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
+        <StackPanel Spacing="16" Padding="32">
+
+            <!-- Logo / Title -->
+            <StackPanel HorizontalAlignment="Center" Spacing="8">
+                <FontIcon Glyph="&#xE909;" FontSize="48" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                <TextBlock Text="Sharkey WinUI" Style="{StaticResource TitleTextBlockStyle}"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="Sign in to your Misskey / Sharkey instance"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           HorizontalAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+
+            <!-- Server URL -->
+            <TextBox x:Name="ServerBox"
+                     Header="Instance URL"
+                     PlaceholderText="https://example.social"
+                     InputScope="Url" />
+
+            <!-- Tab: MiAuth vs Token -->
+            <Pivot x:Name="LoginPivot">
+
+                <PivotItem Header="Sign in with MiAuth">
+                    <StackPanel Spacing="12" Padding="0,12,0,0">
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                            Opens a browser window where you approve the login.
+                            Come back here once you've approved it.
+                        </TextBlock>
+                        <Button x:Name="OpenMiAuthButton"
+                                Content="Open browser to sign in"
+                                Style="{StaticResource AccentButtonStyle}"
+                                HorizontalAlignment="Stretch"
+                                Click="OpenMiAuthButton_Click" />
+                        <Button x:Name="CheckMiAuthButton"
+                                Content="I've approved — complete sign in"
+                                HorizontalAlignment="Stretch"
+                                IsEnabled="False"
+                                Click="CheckMiAuthButton_Click" />
+                    </StackPanel>
+                </PivotItem>
+
+                <PivotItem Header="Use API token">
+                    <StackPanel Spacing="12" Padding="0,12,0,0">
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                            Paste an API token generated from your instance's Settings → API.
+                        </TextBlock>
+                        <PasswordBox x:Name="TokenBox"
+                                     Header="API Token"
+                                     PlaceholderText="Paste token here" />
+                        <Button x:Name="TokenLoginButton"
+                                Content="Sign in"
+                                Style="{StaticResource AccentButtonStyle}"
+                                HorizontalAlignment="Stretch"
+                                Click="TokenLoginButton_Click" />
+                    </StackPanel>
+                </PivotItem>
+
+            </Pivot>
+
+            <!-- Status -->
+            <InfoBar x:Name="StatusBar"
+                     IsOpen="False"
+                     IsClosable="True" />
+
+            <!-- Progress -->
+            <ProgressRing x:Name="Spinner"
+                          IsActive="False"
+                          HorizontalAlignment="Center" />
+
+        </StackPanel>
+    </Grid>
+</Page>

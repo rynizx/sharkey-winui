@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="SharkeyWinUI.Pages.ComposePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <ScrollViewer>
+        <StackPanel MaxWidth="640" HorizontalAlignment="Center" Padding="16" Spacing="12">
+
+            <!-- Header -->
+            <TextBlock x:Name="HeaderText" Text="New Note"
+                       Style="{StaticResource SubtitleTextBlockStyle}" />
+
+            <!-- Reply / Renote context -->
+            <Border x:Name="ContextBorder" Visibility="Collapsed"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    CornerRadius="4" Padding="10">
+                <TextBlock x:Name="ContextText" TextWrapping="Wrap"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </Border>
+
+            <!-- Content warning toggle + input -->
+            <ToggleButton x:Name="CwToggle" Content="Add content warning"
+                          Checked="CwToggle_Checked" Unchecked="CwToggle_Unchecked" />
+            <TextBox x:Name="CwBox" Header="Content warning"
+                     PlaceholderText="Describe the content…"
+                     MaxLength="100" Visibility="Collapsed" />
+
+            <!-- Note body -->
+            <TextBox x:Name="TextBox"
+                     Header="Note"
+                     PlaceholderText="What's on your mind?"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     MinHeight="120"
+                     MaxLength="3000" />
+
+            <!-- Character counter -->
+            <TextBlock x:Name="CharCounter" Text="0 / 3000"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       HorizontalAlignment="Right"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+            <!-- Visibility -->
+            <ComboBox x:Name="VisibilityBox" Header="Visibility"
+                      HorizontalAlignment="Stretch"
+                      SelectionChanged="VisibilityBox_SelectionChanged">
+                <ComboBoxItem Content="Public" Tag="public" IsSelected="True" />
+                <ComboBoxItem Content="Home (followers only on home TL)" Tag="home" />
+                <ComboBoxItem Content="Followers" Tag="followers" />
+                <ComboBoxItem Content="Specified users" Tag="specified" />
+            </ComboBox>
+
+            <!-- Specified users (shown when visibility = specified) -->
+            <TextBox x:Name="VisibleUsersBox"
+                     Header="Visible to (comma-separated @user or @user@host)"
+                     PlaceholderText="@alice, @bob@example.social"
+                     Visibility="Collapsed" />
+
+            <!-- Local only -->
+            <CheckBox x:Name="LocalOnlyBox" Content="Local only (do not federate)" />
+
+            <!-- Reaction acceptance -->
+            <ComboBox x:Name="ReactionAcceptanceBox" Header="Who can react"
+                      HorizontalAlignment="Stretch">
+                <ComboBoxItem Content="Everyone" Tag="" IsSelected="True" />
+                <ComboBoxItem Content="Like only" Tag="likeOnly" />
+                <ComboBoxItem Content="Like only for remote" Tag="likeOnlyForRemote" />
+                <ComboBoxItem Content="Non-sensitive only" Tag="nonSensitiveOnly" />
+                <ComboBoxItem Content="Non-sensitive only (local like-only remote)" Tag="nonSensitiveOnlyForLocalLikeOnlyForRemote" />
+            </ComboBox>
+
+            <!-- Attached files -->
+            <StackPanel Spacing="6">
+                <Button Content="Attach file from Drive"
+                        Click="AttachDriveButton_Click" />
+                <ItemsControl x:Name="AttachedFilesList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" />
+                                <Button Grid.Column="1" Content="&#xE711;"
+                                        FontFamily="{StaticResource SymbolThemeFontFamily}"
+                                        Tag="{Binding Id}"
+                                        Click="RemoveFileButton_Click" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!-- Poll toggle -->
+            <ToggleButton x:Name="PollToggle" Content="Add poll"
+                          Checked="PollToggle_Checked" Unchecked="PollToggle_Unchecked" />
+
+            <!-- Poll editor -->
+            <StackPanel x:Name="PollPanel" Visibility="Collapsed" Spacing="8">
+                <TextBlock Text="Poll choices (2–10)" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                <StackPanel x:Name="PollChoicesPanel" Spacing="4" />
+                <Button Content="Add choice" Click="AddPollChoiceButton_Click" />
+                <CheckBox x:Name="PollMultipleBox" Content="Allow multiple votes" />
+                <DatePicker x:Name="PollExpiry" Header="Expires at (optional)" />
+            </StackPanel>
+
+            <!-- Error -->
+            <InfoBar x:Name="ErrorBar" IsOpen="False" IsClosable="True" Severity="Error" />
+
+            <!-- Actions -->
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <Button Content="Cancel" Click="CancelButton_Click" />
+                <Button x:Name="PostButton"
+                        Content="Post"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Click="PostButton_Click" />
+            </StackPanel>
+
+            <ProgressBar x:Name="PostingBar" IsIndeterminate="True" Visibility="Collapsed" />
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>
