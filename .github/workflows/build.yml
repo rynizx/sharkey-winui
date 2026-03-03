@@ -50,7 +50,7 @@ jobs:
 
       # 4. Restore
       - name: Restore dependencies
-        run: dotnet restore ${{ env.SOLUTION }}
+        run: dotnet restore ${{ env.SOLUTION }} -p:Platform=x64
 
       # 5. Build (no MSIX generation — that is handled by the package job)
       - name: Build
@@ -58,6 +58,7 @@ jobs:
           dotnet build ${{ env.SOLUTION }}
           --configuration ${{ env.CONFIGURATION }}
           --no-restore
+          -p:Platform=x64
           -p:RuntimeIdentifier=${{ env.RUNTIME }}
           -p:AppxPackageSigningEnabled=false
           -p:GenerateAppxPackageOnBuild=false
@@ -131,7 +132,7 @@ jobs:
             nuget-${{ runner.os }}-
 
       - name: Restore
-        run: dotnet restore ${{ env.SOLUTION }}
+        run: dotnet restore ${{ env.SOLUTION }} -p:Platform=x64
 
       # Compute a version number: use the git tag (vX.Y.Z) or fall back to 0.0.1
       - name: Compute version
@@ -152,6 +153,7 @@ jobs:
           --configuration ${{ env.CONFIGURATION }}
           --runtime ${{ env.RUNTIME }}
           --self-contained true
+          -p:Platform=x64
           -p:PublishSingleFile=false
           -p:WindowsPackageType=MSIX
           -p:AppxPackageDir=./artifacts/msix/
