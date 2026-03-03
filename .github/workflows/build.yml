@@ -143,8 +143,8 @@ jobs:
           if (-not $tag) { $tag = "0.0.1" }
           $build = "${{ github.run_number }}"
           $version = "$tag.$build"
-          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-          echo "Version: $version"
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Version: $version"
 
       # Build a self-contained MSIX for side-loading
       - name: Publish (self-contained MSIX)
