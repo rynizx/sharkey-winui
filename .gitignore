@@ -32,7 +32,6 @@ launchSettings.json
 
 # Rider
 .idea/
-*.sln.iml
 
 # Windows
 Thumbs.db
