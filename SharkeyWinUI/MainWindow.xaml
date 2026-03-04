@@ -57,7 +57,25 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
+                <NavigationViewItem
+                    x:Name="BubbleItem"
+                    Tag="bubble"
+                    Content="Bubble Timeline">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7C3;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
                 <NavigationViewItemSeparator />
+
+                <NavigationViewItem
+                    x:Name="SearchItem"
+                    Tag="search"
+                    Content="Search">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE71E;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
 
                 <NavigationViewItem
                     x:Name="NotificationsItem"

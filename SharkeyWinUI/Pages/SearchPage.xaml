@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="SharkeyWinUI.Pages.SearchPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:SharkeyWinUI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header + search box -->
+        <StackPanel Grid.Row="0" Padding="16,12" Spacing="10">
+            <TextBlock Text="Search" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <AutoSuggestBox x:Name="SearchBox"
+                            PlaceholderText="Search notes or users…"
+                            QueryIcon="Find"
+                            QuerySubmitted="SearchBox_QuerySubmitted" />
+        </StackPanel>
+
+        <InfoBar x:Name="ErrorBar" Grid.Row="1" IsOpen="False" IsClosable="True" Severity="Error" />
+
+        <!-- Results pivot -->
+        <Pivot x:Name="ResultsPivot" Grid.Row="2" SelectionChanged="ResultsPivot_SelectionChanged">
+
+            <!-- Notes tab -->
+            <PivotItem Header="Notes">
+                <ListView x:Name="NotesList"
+                          Padding="8,0"
+                          SelectionMode="None"
+                          IsItemClickEnabled="True"
+                          ItemClick="NotesList_ItemClick">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Margin" Value="0,2" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <controls:NoteCard Note="{Binding}" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                    <ListView.Footer>
+                        <Button x:Name="LoadMoreNotesButton"
+                                Content="Load more"
+                                HorizontalAlignment="Center"
+                                Margin="0,8,0,16"
+                                Visibility="Collapsed"
+                                Click="LoadMoreNotesButton_Click" />
+                    </ListView.Footer>
+                </ListView>
+            </PivotItem>
+
+            <!-- Users tab -->
+            <PivotItem Header="Users">
+                <ListView x:Name="UsersList"
+                          Padding="8,0"
+                          SelectionMode="None"
+                          IsItemClickEnabled="True"
+                          ItemClick="UsersList_ItemClick">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="0" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="12,8" ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Avatar -->
+                                <Ellipse Width="40" Height="40" Grid.Column="0">
+                                    <Ellipse.Fill>
+                                        <ImageBrush ImageSource="{Binding AvatarUrl}" Stretch="UniformToFill" />
+                                    </Ellipse.Fill>
+                                </Ellipse>
+
+                                <!-- Name + handle -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="{Binding EffectiveName}"
+                                               Style="{StaticResource BodyStrongTextBlockStyle}"
+                                               TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                    <TextBlock Text="{Binding FullUsername}"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               TextTrimming="CharacterEllipsis" MaxLines="1" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                    <ListView.Footer>
+                        <Button x:Name="LoadMoreUsersButton"
+                                Content="Load more"
+                                HorizontalAlignment="Center"
+                                Margin="0,8,0,16"
+                                Visibility="Collapsed"
+                                Click="LoadMoreUsersButton_Click" />
+                    </ListView.Footer>
+                </ListView>
+            </PivotItem>
+
+        </Pivot>
+
+        <ProgressBar x:Name="LoadingBar" Grid.Row="3" IsIndeterminate="True" Visibility="Collapsed" />
+    </Grid>
+</Page>
