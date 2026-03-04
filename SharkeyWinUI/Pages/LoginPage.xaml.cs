@@ -119,6 +119,8 @@ public sealed partial class LoginPage : Page
 
     // ── Shared ────────────────────────────────────────────────────────────────
 
+    private static readonly LocalSettingsService _settings = new();
+
     private async Task FinalizeLoginAsync(string serverUrl, string token, SharkeyWinUI.Models.User user)
     {
         App.AuthService.SaveCredentials(serverUrl, token, user);
@@ -126,8 +128,7 @@ public sealed partial class LoginPage : Page
         // Cache the avatar URL so the lock page can show it without a network call
         if (!string.IsNullOrEmpty(user.AvatarUrl))
         {
-            Windows.Storage.ApplicationData.Current.LocalSettings
-                .Values[$"cached_avatar_{user.Username}"] = user.AvatarUrl;
+            _settings.Set($"cached_avatar_{user.Username}", user.AvatarUrl);
         }
 
         ShowInfo($"Signed in as {user.EffectiveName}. Loading…");

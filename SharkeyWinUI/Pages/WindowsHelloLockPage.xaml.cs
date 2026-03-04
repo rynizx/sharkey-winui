@@ -60,11 +60,9 @@ public sealed partial class WindowsHelloLockPage : Page
         // (best-effort — the page works fine without an avatar)
         try
         {
-            var avatarKey = $"cached_avatar_{auth.Username}";
-            if (App.AuthService is { } a &&
-                Windows.Storage.ApplicationData.Current.LocalSettings
-                    .Values[avatarKey] is string avatarUrl &&
-                !string.IsNullOrEmpty(avatarUrl))
+            var settings = new LocalSettingsService();
+            var avatarUrl = settings.Get<string>($"cached_avatar_{auth.Username}");
+            if (!string.IsNullOrEmpty(avatarUrl))
             {
                 AvatarBrush.ImageSource = new BitmapImage(new Uri(avatarUrl));
             }
