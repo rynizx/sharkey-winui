@@ -9,7 +9,8 @@ on:
   workflow_dispatch:
 
 env:
-  SOLUTION: SharkeyWinUI/SharkeyWinUI.csproj
+  SOLUTION: SharkeyWinUI.sln
+  PROJECT: SharkeyWinUI/SharkeyWinUI.csproj
   CONFIGURATION: Release
   RUNTIME: win-x64
 
@@ -55,7 +56,7 @@ jobs:
       # 5. Build (no MSIX generation — that is handled by the package job)
       - name: Build
         run: >
-          dotnet build ${{ env.SOLUTION }}
+          dotnet build ${{ env.PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
           --no-restore
           -p:Platform=x64
@@ -150,7 +151,7 @@ jobs:
       # Build a self-contained MSIX for side-loading
       - name: Publish (self-contained MSIX)
         run: >
-          dotnet publish ${{ env.SOLUTION }}
+          dotnet publish ${{ env.PROJECT }}
           --configuration ${{ env.CONFIGURATION }}
           --runtime ${{ env.RUNTIME }}
           --self-contained true
