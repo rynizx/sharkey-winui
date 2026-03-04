@@ -171,9 +171,18 @@ public sealed partial class NoteCard : UserControl
         // If any file is sensitive, add a full-grid overlay that can be dismissed
         if (hasSensitive)
         {
+            var overlayBackground = Application.Current.Resources["LayerFillColorDefaultBrush"]
+                as Microsoft.UI.Xaml.Media.Brush;
+            if (overlayBackground is null)
+            {
+                // Fallback to a semi-transparent black brush to ensure the overlay obscures media
+                overlayBackground = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                    Windows.UI.Color.FromArgb(0x99, 0x00, 0x00, 0x00));
+            }
+
             var overlay = new Border
             {
-                Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["LayerFillColorDefaultBrush"],
+                Background = overlayBackground,
                 CornerRadius = new Microsoft.UI.Xaml.CornerRadius(6),
             };
 
@@ -302,6 +311,10 @@ public sealed partial class NoteCard : UserControl
     {
         if (Note == null || sender is not Button btn || btn.Tag is not int choiceIndex) return;
         var displayNote = GetDisplayNote();
+
+        // Disable all poll choice buttons to prevent double-taps while the request is in-flight.
+        foreach (var b in PollPanel.Children.OfType<Button>()) b.IsEnabled = false;
+
         try
         {
             await App.ApiClient.VotePollAsync(displayNote.Id, choiceIndex);
@@ -309,7 +322,34 @@ public sealed partial class NoteCard : UserControl
             var updated = await App.ApiClient.GetNoteAsync(displayNote.Id);
             PopulatePoll(updated);
         }
-        catch { /* show error in production */ }
+        catch (MisskeyApiException ex)
+        {
+            var dlg = new ContentDialog
+            {
+                Title = "Could not vote",
+                Content = $"The server returned an error: {ex.ResponseBody}",
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot,
+            };
+            await dlg.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            var dlg = new ContentDialog
+            {
+                Title = "Could not vote",
+                Content = ex.Message,
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot,
+            };
+            await dlg.ShowAsync();
+        }
+        finally
+        {
+            // Re-enable whichever buttons are currently in PollPanel (original ones on error,
+            // newly-populated ones on success — already enabled, so this is a safe no-op).
+            foreach (var b in PollPanel.Children.OfType<Button>()) b.IsEnabled = true;
+        }
     }
 
     private void PopulateReactions(Note note)

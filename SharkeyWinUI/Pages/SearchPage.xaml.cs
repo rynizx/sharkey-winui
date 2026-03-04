@@ -55,10 +55,13 @@ public sealed partial class SearchPage : Page
 
     private async Task RunSearchAsync(bool refresh)
     {
+        // Cancel any in-flight request and capture a reference to the new CTS.
+        // We compare at the end so that only the latest call clears the loading state.
         _cts.Cancel();
         _cts.Dispose();
-        _cts = new CancellationTokenSource();
-        var ct = _cts.Token;
+        var cts = new CancellationTokenSource();
+        _cts = cts;
+        var ct = cts.Token;
 
         ErrorBar.IsOpen = false;
         SetLoading(true);
@@ -71,7 +74,12 @@ public sealed partial class SearchPage : Page
                 await SearchUsersAsync(refresh, ct);
         }
         catch (OperationCanceledException) { }
-        finally { SetLoading(false); }
+        finally
+        {
+            // Only clear the loading indicator if this call is still the latest one.
+            if (ReferenceEquals(_cts, cts))
+                SetLoading(false);
+        }
     }
 
     private async Task SearchNotesAsync(bool refresh, CancellationToken ct)
