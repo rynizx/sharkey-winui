@@ -123,8 +123,15 @@ public sealed partial class NotificationsPage : Page
 
     private void NotifList_ItemClick(object sender, ItemClickEventArgs e)
     {
-        if (e.ClickedItem is Notification notif && notif.Note != null)
+        if (e.ClickedItem is not Notification notif || notif.Note == null) return;
+        try
+        {
             Frame.Navigate(typeof(NoteDetailPage), notif.Note.Id);
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
