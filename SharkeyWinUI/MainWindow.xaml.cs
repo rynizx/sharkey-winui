@@ -8,10 +8,12 @@ namespace SharkeyWinUI;
 public sealed partial class MainWindow : Window
 {
     private readonly MisskeyStreamingService _streaming = new();
+    private string? _currentNavTag;
 
     // Maps NavView tag strings to page types
     private static readonly Dictionary<string, Type> PageMap = new()
     {
+
         ["home"]          = typeof(TimelinePage),
         ["local"]         = typeof(TimelinePage),
         ["social"]        = typeof(TimelinePage),
@@ -33,6 +35,9 @@ public sealed partial class MainWindow : Window
     {
         NavView.IsPaneVisible    = false;
         ComposeButton.Visibility = Visibility.Collapsed;
+
+        // Sync the New Note label with the initial pane state
+        SetNewNoteLabelVisible(NavView.IsPaneOpen);
 
         if (!App.AuthService.HasSavedSession)
         {
@@ -103,6 +108,22 @@ public sealed partial class MainWindow : Window
         // IsBackEnabled is bound via x:Bind in XAML, so no manual update needed.
     }
 
+    private void NavView_PaneOpening(NavigationView sender, object args)
+        => SetNewNoteLabelVisible(true);
+
+    private void NavView_PaneClosing(NavigationView sender, NavigationViewPaneClosingEventArgs args)
+        => SetNewNoteLabelVisible(false);
+
+    /// <summary>Shows or hides the "New Note" label inside ComposeButton to match the pane state.</summary>
+    private void SetNewNoteLabelVisible(bool visible)
+    {
+        if (ComposeButton.Content is StackPanel panel)
+        {
+            foreach (var tb in panel.Children.OfType<TextBlock>())
+                tb.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
     private void ComposeButton_Click(object sender, RoutedEventArgs e)
         => ContentFrame.Navigate(typeof(ComposePage));
 
@@ -113,10 +134,12 @@ public sealed partial class MainWindow : Window
         // TimelinePage receives the timeline kind as a string parameter
         object? param = pageType == typeof(TimelinePage) ? tag : null;
 
-        // Avoid navigating to the same page+param twice in a row
-        if (ContentFrame.CurrentSourcePageType == pageType &&
-            ContentFrame.BackStack.Count > 0) return;
+        // Skip only if we're already showing exactly this page with this tag.
+        // Comparing tag (not just type) is necessary because multiple tags share
+        // TimelinePage — without this, switching from Home to Local was silently dropped.
+        if (_currentNavTag == tag && ContentFrame.CurrentSourcePageType == pageType) return;
 
+        _currentNavTag = tag;
         ContentFrame.Navigate(pageType, param);
     }
 

@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <Window
     x:Class="SharkeyWinUI.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -16,6 +15,8 @@
             BackRequested="NavView_BackRequested"
             SelectionChanged="NavView_SelectionChanged"
             Loaded="NavView_Loaded"
+            PaneOpening="NavView_PaneOpening"
+            PaneClosing="NavView_PaneClosing"
             PaneDisplayMode="Left"
             OpenPaneLength="220">
 
@@ -77,25 +78,15 @@
                 </NavigationViewItem>
             </NavigationView.MenuItems>
 
-            <NavigationView.FooterMenuItems>
-                <NavigationViewItem
-                    x:Name="SettingsNavItem"
-                    Tag="settings"
-                    Content="Settings">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE713;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-            </NavigationView.FooterMenuItems>
-
-            <!-- Compose button in the pane -->
+            <!-- Compose button in the pane footer -->
             <NavigationView.PaneFooter>
                 <Button
                     x:Name="ComposeButton"
                     Margin="12,8"
                     HorizontalAlignment="Stretch"
                     Click="ComposeButton_Click"
-                    Style="{StaticResource AccentButtonStyle}">
+                    Style="{StaticResource AccentButtonStyle}"
+                    ToolTipService.ToolTip="New Note">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE710;" FontSize="16" />
                         <TextBlock Text="New Note" />

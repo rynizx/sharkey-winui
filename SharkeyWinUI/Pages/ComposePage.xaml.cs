@@ -124,6 +124,7 @@ public sealed partial class ComposePage : Page
 
     private void VisibilityBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (VisibleUsersBox is null) return; // Guard: may fire before XAML fields are fully assigned
         var tag = (VisibilityBox.SelectedItem as ComboBoxItem)?.Tag as string;
         VisibleUsersBox.Visibility = tag == "specified" ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -251,7 +252,10 @@ public sealed partial class ComposePage : Page
                 poll: poll
             );
 
-            Frame.GoBack();
+            if (Frame.CanGoBack)
+                Frame.GoBack();
+            else
+                Frame.Navigate(typeof(TimelinePage), "home");
         }
         catch (MisskeyApiException ex)
         {
