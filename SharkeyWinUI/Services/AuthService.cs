@@ -1,6 +1,5 @@
 using Windows.Security.Credentials;
 using Windows.Security.Credentials.UI;
-using Windows.Storage;
 using SharkeyWinUI.Models;
 
 namespace SharkeyWinUI.Services;
@@ -10,10 +9,10 @@ namespace SharkeyWinUI.Services;
 ///
 /// Credential storage strategy:
 ///   • Non-sensitive metadata (server URL, user ID, username) →
-///     <see cref="ApplicationDataContainer"/> (LocalSettings).
+///     <see cref="LocalSettingsService"/> (JSON file in LocalAppData).
 ///   • API token → <see cref="PasswordVault"/> (Windows Credential Manager,
 ///     DPAPI-encrypted, scoped to the current Windows user account).
-///   • Windows Hello enabled flag → LocalSettings.
+///   • Windows Hello enabled flag → LocalSettingsService.
 ///
 /// On subsequent launches the token is only surfaced to the app after either:
 ///   (a) Windows Hello verification succeeds   (when HelloEnabled == true), or
@@ -27,8 +26,7 @@ public class AuthService
     private const string KeyUsername     = "auth_username";
     private const string KeyHelloEnabled = "auth_hello_enabled";
 
-    private readonly ApplicationDataContainer _settings =
-        ApplicationData.Current.LocalSettings;
+    private readonly LocalSettingsService _settings = new();
 
     // ── Public state ──────────────────────────────────────────────────────────
 
@@ -36,13 +34,13 @@ public class AuthService
     public bool IsAuthenticated { get; private set; }
 
     /// <summary>Server URL (e.g. "https://example.social") — stored in LocalSettings.</summary>
-    public string? ServerUrl  => _settings.Values[KeyServerUrl]  as string;
+    public string? ServerUrl  => _settings.Get<string>(KeyServerUrl);
 
     /// <summary>Misskey user ID — stored in LocalSettings.</summary>
-    public string? UserId     => _settings.Values[KeyUserId]     as string;
+    public string? UserId     => _settings.Get<string>(KeyUserId);
 
     /// <summary>Misskey @username — stored in LocalSettings.</summary>
-    public string? Username   => _settings.Values[KeyUsername]   as string;
+    public string? Username   => _settings.Get<string>(KeyUsername);
 
     /// <summary>
     /// True when the user has opted in to Windows Hello protection.
@@ -52,8 +50,8 @@ public class AuthService
     /// </summary>
     public bool HelloEnabled
     {
-        get => _settings.Values[KeyHelloEnabled] is bool b && b;
-        set => _settings.Values[KeyHelloEnabled] = value;
+        get => _settings.Get<bool>(KeyHelloEnabled);
+        set => _settings.Set(KeyHelloEnabled, value);
     }
 
     /// <summary>True when server URL and username are recorded (token may not yet be loaded).</summary>
@@ -71,9 +69,9 @@ public class AuthService
     {
         var accountName = BuildAccountName(serverUrl, user.Username);
 
-        _settings.Values[KeyServerUrl] = serverUrl.TrimEnd('/');
-        _settings.Values[KeyUserId]    = user.Id;
-        _settings.Values[KeyUsername]  = user.Username;
+        _settings.Set(KeyServerUrl, serverUrl.TrimEnd('/'));
+        _settings.Set(KeyUserId, user.Id);
+        _settings.Set(KeyUsername, user.Username);
 
         // Always write the token to the vault (DPAPI-encrypted)
         WindowsHelloService.SaveToken(accountName, token);
@@ -146,10 +144,10 @@ public class AuthService
         if (!string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(ServerUrl))
             WindowsHelloService.RemoveToken(BuildAccountName(ServerUrl, Username));
 
-        _settings.Values.Remove(KeyServerUrl);
-        _settings.Values.Remove(KeyUserId);
-        _settings.Values.Remove(KeyUsername);
-        _settings.Values.Remove(KeyHelloEnabled);
+        _settings.Remove(KeyServerUrl);
+        _settings.Remove(KeyUserId);
+        _settings.Remove(KeyUsername);
+        _settings.Remove(KeyHelloEnabled);
 
         IsAuthenticated = false;
         App.ApiClient.Configure(string.Empty, null);
