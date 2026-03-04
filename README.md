@@ -101,9 +101,8 @@ git push origin v1.0.0
 
 ## Signing
 
-The workflow uses `AppxPackageSigningEnabled=false` by default (unsigned, suitable for side-loading).  
-To distribute via the Microsoft Store, provide a code-signing certificate and set the
-`PackageCertificateKeyFile` / `PackageCertificatePassword` repository secrets.
+The CI workflow generates a self-signed code-signing certificate and signs the MSIX package so it can be installed via side-loading.  
+The exported `.cer` file is included in the MSIX artifact bundle; install/trust that certificate on the target machine before installing the `.msix`.
 
 ---
 
