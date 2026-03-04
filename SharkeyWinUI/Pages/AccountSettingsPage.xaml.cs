@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using SharkeyWinUI.Helpers;
 using SharkeyWinUI.Models;
 using SharkeyWinUI.Services;
 
@@ -46,6 +47,19 @@ public sealed partial class AccountSettingsPage : Page
     {
         // Profile
         DisplayNameBox.Text    = me.Name ?? string.Empty;
+
+        // Show a rendered preview when the display name contains emoji shortcodes
+        var nameForPreview = me.Name ?? string.Empty;
+        if (me.Emojis.Count > 0 && nameForPreview.Contains(':'))
+        {
+            DisplayNamePreview.Visibility = Visibility.Visible;
+            EmojiTextHelper.SetTextWithEmojis(DisplayNamePreview, nameForPreview, me.Emojis);
+        }
+        else
+        {
+            DisplayNamePreview.Visibility = Visibility.Collapsed;
+        }
+
         DescriptionBox.Text    = me.Description ?? string.Empty;
         LocationBox.Text       = me.Location ?? string.Empty;
 

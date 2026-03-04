@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.System;
+using SharkeyWinUI.Helpers;
 using SharkeyWinUI.Models;
 using SharkeyWinUI.Pages;
 using SharkeyWinUI.Services;
@@ -50,7 +51,10 @@ public sealed partial class NoteCard : UserControl
         if (note.IsPureRenote && note.Renote != null)
         {
             RenoteHeader.Visibility = Visibility.Visible;
-            RenoteByText.Text = $"{note.User?.EffectiveName ?? note.User?.Username} renoted";
+            EmojiTextHelper.SetTextWithEmojis(
+                    RenoteByText,
+                    $"{note.User?.EffectiveName ?? note.User?.Username} renoted",
+                    note.User?.Emojis);
             displayNote = note.Renote;
         }
         else
@@ -66,7 +70,10 @@ public sealed partial class NoteCard : UserControl
         }
 
         // User names
-        DisplayNameText.Text = displayNote.User?.EffectiveName ?? displayNote.User?.Username ?? "Unknown";
+        EmojiTextHelper.SetTextWithEmojis(
+            DisplayNameText,
+            displayNote.User?.EffectiveName ?? displayNote.User?.Username ?? "Unknown",
+            displayNote.User?.Emojis);
         UsernameText.Text = displayNote.User?.FullUsername ?? string.Empty;
 
         // Remote instance badge
