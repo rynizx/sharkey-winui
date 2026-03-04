@@ -614,18 +614,23 @@ public sealed partial class NoteCard : UserControl
             Title = "Choose a reaction",
             CloseButtonText = "Cancel",
         };
-        // WrapGrid without MaximumRowsOrColumns puts all items on one row;
-        // use 5 columns so the 10 emoji buttons wrap into 2 tidy rows.
-        var panel = new WrapGrid { Orientation = Orientation.Horizontal, MaximumRowsOrColumns = 5 };
-        foreach (var r in new[] { "👍", "❤️", "😂", "😮", "😢", "😡", "🎉", "🔥", "✨", "👀" })
+        // WrapGrid is only valid as an ItemsPanel — use stacked rows instead.
+        var emojis = new[] { "👍", "❤️", "😂", "😮", "😢", "😡", "🎉", "🔥", "✨", "👀" };
+        var panel = new StackPanel { Spacing = 4 };
+        for (int i = 0; i < emojis.Length; i += 5)
         {
-            var btn = new Button { Content = r, FontSize = 20, Margin = new Thickness(4), Tag = r };
-            btn.Click += (_, _) =>
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
+            foreach (var r in emojis.Skip(i).Take(5))
             {
-                dlg.Hide();
-                _ = SendReactionAsync(displayNote.Id, (string)btn.Tag);
-            };
-            panel.Children.Add(btn);
+                var btn = new Button { Content = r, FontSize = 20, Margin = new Thickness(4), Tag = r };
+                btn.Click += (_, _) =>
+                {
+                    dlg.Hide();
+                    _ = SendReactionAsync(displayNote.Id, (string)btn.Tag);
+                };
+                row.Children.Add(btn);
+            }
+            panel.Children.Add(row);
         }
         dlg.Content = panel;
         await ShowDialogAsync(dlg);

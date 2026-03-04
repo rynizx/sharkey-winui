@@ -81,8 +81,9 @@ public sealed partial class MainWindow : Window
         var titleBar = AppWindow.TitleBar;
         // LeftInset: typically 0 on standard Windows, non-zero in RTL / tablet modes.
         // RightInset: width of the min/max/close buttons (≈138 px at 100% DPI).
-        LeftPaddingColumn.Width  = new GridLength(titleBar.LeftInset);
-        RightPaddingColumn.Width = new GridLength(titleBar.RightInset);
+        // Insets can be -1 when the window is minimized; clamp to 0 to avoid ArgumentException.
+        LeftPaddingColumn.Width  = new GridLength(Math.Max(0, titleBar.LeftInset));
+        RightPaddingColumn.Width = new GridLength(Math.Max(0, titleBar.RightInset));
     }
 
     private void UpdateTitleBar()
