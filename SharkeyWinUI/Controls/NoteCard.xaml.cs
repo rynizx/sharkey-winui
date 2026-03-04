@@ -129,22 +129,41 @@ public sealed partial class NoteCard : UserControl
             MediaGrid.Children.Remove(child);
 
         var images = note.Files.Where(f => f.IsImage).Take(4).ToList();
+
+        // Collapse the second row when there are 1-2 images
+        MediaGrid.RowDefinitions[1].Height = images.Count > 2
+            ? new GridLength(160)
+            : new GridLength(0);
+
         for (int i = 0; i < images.Count; i++)
         {
             var file = images[i];
             var img = new Image
             {
                 Stretch = Microsoft.UI.Xaml.Media.Stretch.UniformToFill,
-                MaxHeight = 120,
             };
             if (!string.IsNullOrEmpty(file.ThumbnailUrl ?? file.Url))
             {
                 try { img.Source = new BitmapImage(new Uri(file.ThumbnailUrl ?? file.Url!)); }
                 catch { /* skip */ }
             }
-            Grid.SetRow(img, i / 2);
-            Grid.SetColumn(img, i % 2);
-            MediaGrid.Children.Add(img);
+
+            // Wrap each image in a border for rounded corners
+            var wrapper = new Border
+            {
+                CornerRadius = new Microsoft.UI.Xaml.CornerRadius(6),
+                Child = img,
+            };
+
+            // If single image, span both columns
+            if (images.Count == 1)
+            {
+                Grid.SetColumnSpan(wrapper, 2);
+            }
+
+            Grid.SetRow(wrapper, i / 2);
+            Grid.SetColumn(wrapper, i % 2);
+            MediaGrid.Children.Add(wrapper);
         }
     }
 

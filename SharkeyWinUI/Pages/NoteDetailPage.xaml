@@ -9,7 +9,7 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <ScrollViewer>
+    <ScrollViewer Padding="8,0">
         <StackPanel>
 
             <!-- Loading / error -->
@@ -17,23 +17,18 @@
             <InfoBar x:Name="ErrorBar" IsOpen="False" IsClosable="True" Severity="Error" />
 
             <!-- Root note -->
-            <controls:NoteCard x:Name="RootNoteCard"
-                               BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
-                               BorderThickness="0,0,0,1" />
+            <controls:NoteCard x:Name="RootNoteCard" />
 
             <!-- Replies header -->
             <TextBlock Text="Replies"
                        Style="{StaticResource BodyStrongTextBlockStyle}"
-                       Margin="16,12,16,4" />
+                       Margin="12,14,12,6" />
 
             <!-- Replies list -->
-            <ItemsControl x:Name="RepliesList">
+            <ItemsControl x:Name="RepliesList" Margin="16,0,0,0">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <controls:NoteCard Note="{Binding}"
-                                           BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
-                                           BorderThickness="0,0,0,1"
-                                           Margin="16,0,0,0" />
+                        <controls:NoteCard Note="{Binding}" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -42,7 +37,7 @@
             <Button x:Name="LoadMoreRepliesButton"
                     Content="Load more replies"
                     HorizontalAlignment="Center"
-                    Margin="0,8,0,16"
+                    Margin="0,12,0,20"
                     Visibility="Collapsed"
                     Click="LoadMoreRepliesButton_Click" />
 

@@ -16,24 +16,28 @@
             <InfoBar x:Name="ErrorBar" IsOpen="False" IsClosable="True" Severity="Error" />
 
             <!-- Banner -->
-            <Grid Height="160">
+            <Grid Height="180">
                 <Image x:Name="BannerImage" Stretch="UniformToFill" />
-                <Rectangle Fill="{ThemeResource LayerOnAcrylicFillColorDefaultBrush}" Opacity="0.3" />
+                <Rectangle Fill="{ThemeResource LayerOnAcrylicFillColorDefaultBrush}" Opacity="0.35" />
             </Grid>
 
             <!-- Avatar + actions row -->
-            <Grid Padding="16,-32,16,0" ColumnSpacing="12">
+            <Grid Padding="20,-36,20,0" ColumnSpacing="14">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Ellipse Width="72" Height="72" VerticalAlignment="Bottom">
-                    <Ellipse.Fill>
-                        <ImageBrush x:Name="AvatarBrush" Stretch="UniformToFill" />
-                    </Ellipse.Fill>
-                </Ellipse>
+                <!-- Avatar with ring -->
+                <Border CornerRadius="42" BorderBrush="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderThickness="3" Width="84" Height="84" VerticalAlignment="Bottom">
+                    <Ellipse Width="78" Height="78">
+                        <Ellipse.Fill>
+                            <ImageBrush x:Name="AvatarBrush" Stretch="UniformToFill" />
+                        </Ellipse.Fill>
+                    </Ellipse>
+                </Border>
 
                 <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Spacing="2">
                     <TextBlock x:Name="DisplayNameText"
@@ -68,54 +72,65 @@
             </Grid>
 
             <!-- Bio + meta -->
-            <StackPanel Padding="16,12" Spacing="8">
-                <TextBlock x:Name="BioText" TextWrapping="Wrap" />
+            <StackPanel Padding="20,14" Spacing="10">
+                <TextBlock x:Name="BioText" TextWrapping="Wrap" LineHeight="22" />
 
                 <StackPanel x:Name="RolesPanel" Orientation="Horizontal"
-                            Spacing="4" Visibility="Collapsed" />
+                            Spacing="6" Visibility="Collapsed" />
 
                 <!-- Fields -->
-                <ItemsControl x:Name="FieldsList">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid ColumnSpacing="8" Margin="0,2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding Name}"
-                                           Style="{StaticResource CaptionTextBlockStyle}"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="1" Text="{Binding Value}"
-                                           TextWrapping="Wrap" VerticalAlignment="Center" />
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        CornerRadius="8" Padding="12,8"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1">
+                    <ItemsControl x:Name="FieldsList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnSpacing="12" Margin="0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Name}"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Value}"
+                                               TextWrapping="Wrap" VerticalAlignment="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
 
                 <!-- Stats row -->
-                <StackPanel Orientation="Horizontal" Spacing="20">
-                    <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="24" Margin="0,4,0,0">
+                    <StackPanel HorizontalAlignment="Center">
                         <TextBlock x:Name="NotesCountText"
-                                   Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   HorizontalAlignment="Center" />
                         <TextBlock Text="Notes"
                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   HorizontalAlignment="Center" />
                     </StackPanel>
-                    <StackPanel>
+                    <StackPanel HorizontalAlignment="Center">
                         <TextBlock x:Name="FollowingCountText"
-                                   Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   HorizontalAlignment="Center" />
                         <TextBlock Text="Following"
                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   HorizontalAlignment="Center" />
                     </StackPanel>
-                    <StackPanel>
+                    <StackPanel HorizontalAlignment="Center">
                         <TextBlock x:Name="FollowersCountText"
-                                   Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   HorizontalAlignment="Center" />
                         <TextBlock Text="Followers"
                                    Style="{StaticResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   HorizontalAlignment="Center" />
                     </StackPanel>
                 </StackPanel>
 
@@ -128,15 +143,13 @@
             </StackPanel>
 
             <!-- Notes tab -->
-            <TextBlock Text="Notes" Padding="16,0,16,8"
+            <TextBlock Text="Notes" Padding="20,4,20,8"
                        Style="{StaticResource BodyStrongTextBlockStyle}" />
 
-            <ItemsControl x:Name="NotesList">
+            <ItemsControl x:Name="NotesList" Margin="8,0">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <controls:NoteCard Note="{Binding}"
-                                           BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
-                                           BorderThickness="0,0,0,1" />
+                        <controls:NoteCard Note="{Binding}" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -144,7 +157,7 @@
             <Button x:Name="LoadMoreNotesButton"
                     Content="Load more notes"
                     HorizontalAlignment="Center"
-                    Margin="0,8,0,16"
+                    Margin="0,12,0,20"
                     Visibility="Collapsed"
                     Click="LoadMoreNotesButton_Click" />
 

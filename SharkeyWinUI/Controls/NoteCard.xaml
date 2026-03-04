@@ -7,178 +7,199 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Padding="12,10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" /><!-- renote header -->
-            <RowDefinition Height="Auto" /><!-- user row -->
-            <RowDefinition Height="Auto" /><!-- CW -->
-            <RowDefinition Height="Auto" /><!-- body -->
-            <RowDefinition Height="Auto" /><!-- media -->
-            <RowDefinition Height="Auto" /><!-- poll -->
-            <RowDefinition Height="Auto" /><!-- reactions -->
-            <RowDefinition Height="Auto" /><!-- action bar -->
-        </Grid.RowDefinitions>
-
-        <!-- Renote header -->
-        <StackPanel x:Name="RenoteHeader" Grid.Row="0"
-                    Orientation="Horizontal" Spacing="6"
-                    Visibility="Collapsed" Margin="0,0,0,6">
-            <FontIcon Glyph="&#xE8EB;" FontSize="12"
-                      Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-            <TextBlock x:Name="RenoteByText"
-                       Style="{StaticResource CaptionTextBlockStyle}"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-        </StackPanel>
-
-        <!-- User row -->
-        <Grid Grid.Row="1" ColumnSpacing="10" Margin="0,0,0,8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <!-- Avatar -->
-            <Ellipse Width="40" Height="40" Grid.Column="0">
-                <Ellipse.Fill>
-                    <ImageBrush x:Name="AvatarBrush" Stretch="UniformToFill" />
-                </Ellipse.Fill>
-            </Ellipse>
-
-            <!-- Name + instance badge -->
-            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
-                <TextBlock x:Name="DisplayNameText"
-                           TextTrimming="CharacterEllipsis"
-                           MaxLines="1"
-                           Style="{StaticResource BodyStrongTextBlockStyle}" />
-                <TextBlock x:Name="UsernameText"
-                           Style="{StaticResource CaptionTextBlockStyle}"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                           TextTrimming="CharacterEllipsis" MaxLines="1" />
-            </StackPanel>
-
-            <!-- Timestamp -->
-            <TextBlock x:Name="TimestampText"
-                       Grid.Column="2"
-                       VerticalAlignment="Top"
-                       Style="{StaticResource CaptionTextBlockStyle}"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-        </Grid>
-
-        <!-- Federated instance badge -->
-        <Border x:Name="InstanceBadge" Grid.Row="1"
-                HorizontalAlignment="Left"
-                Margin="50,24,0,0"
-                Padding="4,1"
-                CornerRadius="2"
-                Visibility="Collapsed"
-                Background="{ThemeResource SystemFillColorAttentionBackgroundBrush}">
-            <TextBlock x:Name="InstanceBadgeText"
-                       Style="{StaticResource CaptionTextBlockStyle}"
-                       FontSize="10" />
-        </Border>
-
-        <!-- Content warning -->
-        <StackPanel x:Name="CwPanel" Grid.Row="2" Spacing="6" Margin="0,0,0,6" Visibility="Collapsed">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-                <FontIcon Glyph="&#xE7BA;" FontSize="14"
-                          Foreground="{ThemeResource SystemFillColorCautionBrush}" />
-                <TextBlock x:Name="CwText"
-                           Style="{StaticResource BodyStrongTextBlockStyle}" />
-            </StackPanel>
-            <ToggleButton x:Name="CwToggle"
-                          Content="Show content"
-                          Checked="CwToggle_Checked"
-                          Unchecked="CwToggle_Unchecked" />
-        </StackPanel>
-
-        <!-- Note body -->
-        <TextBlock x:Name="BodyText"
-                   Grid.Row="3"
-                   TextWrapping="Wrap"
-                   Margin="0,0,0,8"
-                   IsTextSelectionEnabled="True" />
-
-        <!-- Media grid (up to 4 images shown) -->
-        <Grid x:Name="MediaGrid" Grid.Row="4" Margin="0,0,0,8" Visibility="Collapsed">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+    <!-- Outer card container -->
+    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Margin="4,3"
+            Padding="14,12">
+        <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="120" />
-                <RowDefinition Height="120" />
+                <RowDefinition Height="Auto" /><!-- renote header -->
+                <RowDefinition Height="Auto" /><!-- user row -->
+                <RowDefinition Height="Auto" /><!-- CW -->
+                <RowDefinition Height="Auto" /><!-- body -->
+                <RowDefinition Height="Auto" /><!-- media -->
+                <RowDefinition Height="Auto" /><!-- poll -->
+                <RowDefinition Height="Auto" /><!-- reactions -->
+                <RowDefinition Height="Auto" /><!-- action bar -->
             </Grid.RowDefinitions>
-            <!-- Images are added programmatically in code-behind -->
+
+            <!-- Renote header -->
+            <StackPanel x:Name="RenoteHeader" Grid.Row="0"
+                        Orientation="Horizontal" Spacing="6"
+                        Visibility="Collapsed" Margin="0,0,0,8">
+                <FontIcon Glyph="&#xE8EB;" FontSize="12"
+                          Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock x:Name="RenoteByText"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+
+            <!-- User row -->
+            <Grid Grid.Row="1" ColumnSpacing="10" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Avatar -->
+                <Grid Width="42" Height="42" Grid.Column="0">
+                    <Ellipse Width="42" Height="42">
+                        <Ellipse.Fill>
+                            <ImageBrush x:Name="AvatarBrush" Stretch="UniformToFill" />
+                        </Ellipse.Fill>
+                    </Ellipse>
+                </Grid>
+
+                <!-- Name + handle + instance badge -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock x:Name="DisplayNameText"
+                                   TextTrimming="CharacterEllipsis"
+                                   MaxLines="1"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <!-- Federated instance badge (inline) -->
+                        <Border x:Name="InstanceBadge"
+                                VerticalAlignment="Center"
+                                Padding="5,1"
+                                CornerRadius="4"
+                                Visibility="Collapsed"
+                                Background="{ThemeResource SystemFillColorAttentionBackgroundBrush}">
+                            <TextBlock x:Name="InstanceBadgeText"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       FontSize="10" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock x:Name="UsernameText"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextTrimming="CharacterEllipsis" MaxLines="1" />
+                </StackPanel>
+
+                <!-- Timestamp -->
+                <TextBlock x:Name="TimestampText"
+                           Grid.Column="2"
+                           VerticalAlignment="Center"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </Grid>
+
+            <!-- Content warning -->
+            <StackPanel x:Name="CwPanel" Grid.Row="2" Spacing="6" Margin="0,0,0,8" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="&#xE7BA;" FontSize="14"
+                              Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                    <TextBlock x:Name="CwText"
+                               Style="{StaticResource BodyStrongTextBlockStyle}" />
+                </StackPanel>
+                <ToggleButton x:Name="CwToggle"
+                              Content="Show content"
+                              Checked="CwToggle_Checked"
+                              Unchecked="CwToggle_Unchecked" />
+            </StackPanel>
+
+            <!-- Note body -->
+            <TextBlock x:Name="BodyText"
+                       Grid.Row="3"
+                       TextWrapping="Wrap"
+                       LineHeight="22"
+                       Margin="0,0,0,8"
+                       IsTextSelectionEnabled="True" />
+
+            <!-- Media grid (up to 4 images shown) -->
+            <Grid x:Name="MediaGrid" Grid.Row="4" Margin="0,0,0,10" Visibility="Collapsed"
+                  ColumnSpacing="4" RowSpacing="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="160" />
+                    <RowDefinition Height="160" />
+                </Grid.RowDefinitions>
+                <!-- Images are added programmatically in code-behind -->
+            </Grid>
+
+            <!-- Poll -->
+            <StackPanel x:Name="PollPanel" Grid.Row="5" Spacing="6"
+                        Margin="0,0,0,8" Visibility="Collapsed" />
+
+            <!-- Reactions -->
+            <ItemsControl x:Name="ReactionsPanel" Grid.Row="6" Margin="0,2,0,6">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapGrid Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+
+            <!-- Action bar -->
+            <StackPanel Grid.Row="7" Orientation="Horizontal" Spacing="2">
+
+                <Button x:Name="ReplyButton" Click="ReplyButton_Click"
+                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
+                        Padding="8,6"
+                        ToolTipService.ToolTip="Reply">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE97A;" FontSize="14" />
+                        <TextBlock x:Name="RepliesCountText" Text="0"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="RenoteButton" Click="RenoteButton_Click"
+                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
+                        Padding="8,6"
+                        ToolTipService.ToolTip="Renote">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE8EB;" FontSize="14" />
+                        <TextBlock x:Name="RenoteCountText" Text="0"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="ReactButton" Click="ReactButton_Click"
+                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
+                        Padding="8,6"
+                        ToolTipService.ToolTip="React">
+                    <FontIcon Glyph="&#xE76E;" FontSize="14" />
+                </Button>
+
+                <Button x:Name="FavouriteButton" Click="FavouriteButton_Click"
+                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
+                        Padding="8,6"
+                        ToolTipService.ToolTip="Favourite">
+                    <FontIcon x:Name="FavouriteIcon" Glyph="&#xE734;" FontSize="14" />
+                </Button>
+
+                <!-- More options -->
+                <Button Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
+                        Padding="8,6"
+                        ToolTipService.ToolTip="More">
+                    <FontIcon Glyph="&#xE712;" FontSize="14" />
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem x:Name="CopyLinkItem" Text="Copy link" Click="CopyLinkItem_Click">
+                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE71B;" /></MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem x:Name="OpenInBrowserItem" Text="Open in browser" Click="OpenInBrowserItem_Click">
+                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE774;" /></MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutSeparator />
+                            <MenuFlyoutItem x:Name="DeleteNoteItem" Text="Delete note" Click="DeleteNoteItem_Click"
+                                            Foreground="{ThemeResource SystemFillColorCriticalBrush}">
+                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" /></MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
+
         </Grid>
-
-        <!-- Poll -->
-        <StackPanel x:Name="PollPanel" Grid.Row="5" Spacing="6"
-                    Margin="0,0,0,8" Visibility="Collapsed" />
-
-        <!-- Reactions -->
-        <ItemsControl x:Name="ReactionsPanel" Grid.Row="6" Margin="0,0,0,8">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <WrapGrid Orientation="Horizontal" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-        </ItemsControl>
-
-        <!-- Action bar -->
-        <StackPanel Grid.Row="7" Orientation="Horizontal" Spacing="4">
-
-            <Button x:Name="ReplyButton" Click="ReplyButton_Click"
-                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
-                    ToolTipService.ToolTip="Reply">
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                    <FontIcon Glyph="&#xE97A;" FontSize="14" />
-                    <TextBlock x:Name="RepliesCountText" Text="0" />
-                </StackPanel>
-            </Button>
-
-            <Button x:Name="RenoteButton" Click="RenoteButton_Click"
-                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
-                    ToolTipService.ToolTip="Renote">
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                    <FontIcon Glyph="&#xE8EB;" FontSize="14" />
-                    <TextBlock x:Name="RenoteCountText" Text="0" />
-                </StackPanel>
-            </Button>
-
-            <Button x:Name="ReactButton" Click="ReactButton_Click"
-                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
-                    ToolTipService.ToolTip="React">
-                <FontIcon Glyph="&#xE76E;" FontSize="14" />
-            </Button>
-
-            <Button x:Name="FavouriteButton" Click="FavouriteButton_Click"
-                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
-                    ToolTipService.ToolTip="Favourite">
-                <FontIcon x:Name="FavouriteIcon" Glyph="&#xE734;" FontSize="14" />
-            </Button>
-
-            <!-- More options -->
-            <Button Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
-                    ToolTipService.ToolTip="More">
-                <FontIcon Glyph="&#xE712;" FontSize="14" />
-                <Button.Flyout>
-                    <MenuFlyout>
-                        <MenuFlyoutItem x:Name="CopyLinkItem" Text="Copy link" Click="CopyLinkItem_Click">
-                            <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE71B;" /></MenuFlyoutItem.Icon>
-                        </MenuFlyoutItem>
-                        <MenuFlyoutItem x:Name="OpenInBrowserItem" Text="Open in browser" Click="OpenInBrowserItem_Click">
-                            <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE774;" /></MenuFlyoutItem.Icon>
-                        </MenuFlyoutItem>
-                        <MenuFlyoutSeparator />
-                        <MenuFlyoutItem x:Name="DeleteNoteItem" Text="Delete note" Click="DeleteNoteItem_Click"
-                                        Foreground="{ThemeResource SystemFillColorCriticalBrush}">
-                            <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" /></MenuFlyoutItem.Icon>
-                        </MenuFlyoutItem>
-                    </MenuFlyout>
-                </Button.Flyout>
-            </Button>
-        </StackPanel>
-
-    </Grid>
+    </Border>
 </UserControl>
