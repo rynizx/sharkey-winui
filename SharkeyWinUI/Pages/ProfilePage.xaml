@@ -64,6 +64,28 @@
                             Foreground="{ThemeResource SystemFillColorCriticalBrush}"
                             Visibility="Collapsed"
                             Click="BlockButton_Click" />
+                    <Button x:Name="MuteButton"
+                            Content="Muted"
+                            Visibility="Collapsed"
+                            Click="MuteButton_Click" />
+                    <!-- More actions (visible on other user profiles) -->
+                    <Button x:Name="MoreButton"
+                            Visibility="Collapsed"
+                            ToolTipService.ToolTip="More actions">
+                        <FontIcon Glyph="&#xE712;" FontSize="14" />
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem x:Name="MuteItem" Text="Mute" Click="MuteItem_Click">
+                                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8D8;" /></MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem x:Name="BlockItem" Text="Block" Click="BlockItem_Click">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE8F8;" Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
                 </StackPanel>
             </Grid>
 

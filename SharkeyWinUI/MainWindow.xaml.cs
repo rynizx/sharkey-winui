@@ -17,6 +17,7 @@ public sealed partial class MainWindow : Window
         ["social"]        = typeof(TimelinePage),
         ["global"]        = typeof(TimelinePage),
         ["bubble"]        = typeof(TimelinePage),
+        ["search"]        = typeof(SearchPage),
         ["notifications"] = typeof(NotificationsPage),
         ["profile"]       = typeof(ProfilePage),
         ["settings"]      = typeof(AccountSettingsPage),

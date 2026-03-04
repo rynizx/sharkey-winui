@@ -324,6 +324,16 @@ public sealed partial class NoteCard : UserControl
         Clipboard.SetContent(dp);
     }
 
+    private void CopyTextItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (Note == null) return;
+        var text = Note.DisplayText;
+        if (string.IsNullOrEmpty(text)) return;
+        var dp = new DataPackage();
+        dp.SetText(text);
+        Clipboard.SetContent(dp);
+    }
+
     private async void OpenInBrowserItem_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;

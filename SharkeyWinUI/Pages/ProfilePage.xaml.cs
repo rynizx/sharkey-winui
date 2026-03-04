@@ -75,6 +75,8 @@ public sealed partial class ProfilePage : Page
                 UnfollowButton.Visibility = Visibility.Collapsed;
                 PendingButton.Visibility  = Visibility.Collapsed;
                 BlockButton.Visibility    = Visibility.Collapsed;
+                MuteButton.Visibility     = Visibility.Collapsed;
+                MoreButton.Visibility     = Visibility.Collapsed;
             }
 
             await LoadNotesAsync(ct);
@@ -164,6 +166,12 @@ public sealed partial class ProfilePage : Page
         UnfollowButton.Visibility = Visibility.Collapsed;
         PendingButton.Visibility  = Visibility.Collapsed;
         BlockButton.Visibility    = Visibility.Collapsed;
+        MuteButton.Visibility     = _relation.IsMuted ? Visibility.Visible : Visibility.Collapsed;
+        MoreButton.Visibility     = Visibility.Visible;
+
+        // Update flyout item labels based on current relationship state
+        MuteItem.Text  = _relation.IsMuted  ? "Unmute" : "Mute";
+        BlockItem.Text = _relation.IsBlocking ? "Unblock" : "Block";
 
         if (_relation.IsBlocking)
         {
@@ -258,6 +266,104 @@ public sealed partial class ProfilePage : Page
                 UpdateFollowButtons();
             }
             catch (MisskeyApiException ex) { ShowError($"Could not unblock: {ex.ResponseBody}"); }
+        }
+    }
+
+    private async void MuteButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_user == null) return;
+        var dlg = new ContentDialog
+        {
+            Title = "Unmute user",
+            Content = $"Unmute @{_user.Username}?",
+            PrimaryButtonText = "Unmute",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+            XamlRoot = XamlRoot,
+        };
+        if (await dlg.ShowAsync() == ContentDialogResult.Primary)
+        {
+            try
+            {
+                await App.ApiClient.UnmuteUserAsync(_user.Id);
+                _relation = await App.ApiClient.GetUserRelationAsync(_user.Id);
+                UpdateFollowButtons();
+            }
+            catch (MisskeyApiException ex) { ShowError($"Could not unmute: {ex.ResponseBody}"); }
+        }
+    }
+
+    private async void MuteItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (_user == null || _relation == null) return;
+        if (_relation.IsMuted)
+        {
+            try
+            {
+                await App.ApiClient.UnmuteUserAsync(_user.Id);
+                _relation = await App.ApiClient.GetUserRelationAsync(_user.Id);
+                UpdateFollowButtons();
+            }
+            catch (MisskeyApiException ex) { ShowError($"Could not unmute: {ex.ResponseBody}"); }
+        }
+        else
+        {
+            try
+            {
+                await App.ApiClient.MuteUserAsync(_user.Id);
+                _relation = await App.ApiClient.GetUserRelationAsync(_user.Id);
+                UpdateFollowButtons();
+            }
+            catch (MisskeyApiException ex) { ShowError($"Could not mute: {ex.ResponseBody}"); }
+        }
+    }
+
+    private async void BlockItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (_user == null || _relation == null) return;
+        if (_relation.IsBlocking)
+        {
+            var dlg = new ContentDialog
+            {
+                Title = "Unblock user",
+                Content = $"Unblock @{_user.Username}?",
+                PrimaryButtonText = "Unblock",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = XamlRoot,
+            };
+            if (await dlg.ShowAsync() == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    await App.ApiClient.UnblockUserAsync(_user.Id);
+                    _relation = await App.ApiClient.GetUserRelationAsync(_user.Id);
+                    UpdateFollowButtons();
+                }
+                catch (MisskeyApiException ex) { ShowError($"Could not unblock: {ex.ResponseBody}"); }
+            }
+        }
+        else
+        {
+            var dlg = new ContentDialog
+            {
+                Title = "Block user",
+                Content = $"Block @{_user.Username}? They won't be able to follow or see your notes.",
+                PrimaryButtonText = "Block",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = XamlRoot,
+            };
+            if (await dlg.ShowAsync() == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    await App.ApiClient.BlockUserAsync(_user.Id);
+                    _relation = await App.ApiClient.GetUserRelationAsync(_user.Id);
+                    UpdateFollowButtons();
+                }
+                catch (MisskeyApiException ex) { ShowError($"Could not block: {ex.ResponseBody}"); }
+            }
         }
     }
 
