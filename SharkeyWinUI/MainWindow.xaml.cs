@@ -1,5 +1,7 @@
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using SharkeyWinUI.Pages;
 using SharkeyWinUI.Services;
 
@@ -13,7 +15,6 @@ public sealed partial class MainWindow : Window
     // Maps NavView tag strings to page types
     private static readonly Dictionary<string, Type> PageMap = new()
     {
-
         ["home"]          = typeof(TimelinePage),
         ["local"]         = typeof(TimelinePage),
         ["social"]        = typeof(TimelinePage),
@@ -25,37 +26,115 @@ public sealed partial class MainWindow : Window
         ["settings"]      = typeof(AccountSettingsPage),
     };
 
+    // Maps nav tags to their display titles
+    private static readonly Dictionary<string, string> TagTitles = new()
+    {
+        ["home"]          = "Home",
+        ["local"]         = "Local Timeline",
+        ["social"]        = "Social Timeline",
+        ["global"]        = "Global Timeline",
+        ["bubble"]        = "Bubble Timeline",
+        ["search"]        = "Search",
+        ["notifications"] = "Notifications",
+        ["profile"]       = "Profile",
+        ["settings"]      = "Settings",
+    };
+
     public MainWindow()
     {
         InitializeComponent();
         Title = "Sharkey WinUI";
         App.Streaming = _streaming;
+
+        // Mica backdrop
+        SystemBackdrop = new MicaBackdrop();
+
+        // Extend client area into the title bar so the NavView and Mica
+        // fill the full window, and our custom title bar overlay shows at top.
+        ExtendsContentIntoTitleBar = true;
+
+        // Make the OS caption buttons (min/max/close) blend with Mica.
+        var tb = AppWindow.TitleBar;
+        tb.ButtonBackgroundColor         = Colors.Transparent;
+        tb.ButtonInactiveBackgroundColor = Colors.Transparent;
+        tb.ButtonHoverBackgroundColor    = Colors.Transparent;
+        tb.ButtonPressedBackgroundColor  = Colors.Transparent;
+
+        // Register our overlay Grid as the title bar drag region.
+        // This also tells the NavigationView how tall the title bar is so it
+        // offsets its content (pane items + frame) correctly.
+        SetTitleBar(AppTitleBar);
+
+        // Update left/right padding columns whenever the caption-button insets change
+        // (DPI change, snap layout, window state change, etc.).
+        // AppWindowTitleBar.Changed is not available in Windows App SDK 1.5; use
+        // Window.SizeChanged which fires on every resize/DPI change instead.
+        SizeChanged += (_, _) => SetTitleBarColumnWidths();
+        Activated   += (_, _) => SetTitleBarColumnWidths();
     }
+
+    // ── Title bar helpers ─────────────────────────────────────────────────────
+
+    /// <summary>Keeps the left/right padding columns in sync with caption-button insets.</summary>
+    private void SetTitleBarColumnWidths()
+    {
+        var titleBar = AppWindow.TitleBar;
+        // LeftInset: typically 0 on standard Windows, non-zero in RTL / tablet modes.
+        // RightInset: width of the min/max/close buttons (≈138 px at 100% DPI).
+        LeftPaddingColumn.Width  = new GridLength(titleBar.LeftInset);
+        RightPaddingColumn.Width = new GridLength(titleBar.RightInset);
+    }
+
+    private void UpdateTitleBar()
+    {
+        // Resolve the page title from the current nav tag first, then fall back
+        // to the source page type for pages reached outside the NavView.
+        string title;
+        if (_currentNavTag != null && TagTitles.TryGetValue(_currentNavTag, out var tagTitle))
+        {
+            title = tagTitle;
+        }
+        else
+        {
+            title = ContentFrame.CurrentSourcePageType switch
+            {
+                Type t when t == typeof(NoteDetailPage)            => "Note",
+                Type t when t == typeof(ComposePage)               => "New Note",
+                Type t when t == typeof(NotificationSettingsPage)  => "Notification Settings",
+                _                                                   => "Sharkey WinUI",
+            };
+        }
+
+        TitleBarTitle.Text = title;
+        TitleBarBackButton.Visibility =
+            ContentFrame.CanGoBack ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void TitleBarBackButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (ContentFrame.CanGoBack)
+            ContentFrame.GoBack();
+    }
+
+    // ── Navigation loading ────────────────────────────────────────────────────
 
     private async void NavView_Loaded(object sender, RoutedEventArgs e)
     {
         NavView.IsPaneVisible    = false;
         ComposeButton.Visibility = Visibility.Collapsed;
 
-        // Sync the New Note label with the initial pane state
-        SetNewNoteLabelVisible(NavView.IsPaneOpen);
-
         if (!App.AuthService.HasSavedSession)
         {
-            // First run — show login
             ContentFrame.Navigate(typeof(LoginPage));
             return;
         }
 
         if (App.AuthService.HelloEnabled)
         {
-            // Credentials saved + Hello required — show lock screen
-            // The lock page calls OnLoggedIn() after successful verification
             ContentFrame.Navigate(typeof(WindowsHelloLockPage));
             return;
         }
 
-        // Credentials saved, no Hello required — silently restore
         if (App.AuthService.TryRestoreSession())
         {
             ShowAuthenticatedUI();
@@ -63,7 +142,6 @@ public sealed partial class MainWindow : Window
         }
         else
         {
-            // Vault entry missing (e.g., OS re-install) — re-authenticate
             ContentFrame.Navigate(typeof(LoginPage));
         }
     }
@@ -77,14 +155,17 @@ public sealed partial class MainWindow : Window
 
     private void ShowAuthenticatedUI()
     {
-        NavView.IsPaneVisible = true;
+        NavView.IsPaneVisible    = true;
         ComposeButton.Visibility = Visibility.Visible;
-        NavView.SelectedItem = HomeItem;
+        NavView.SelectedItem     = HomeItem;
         Navigate("home");
         // Remove auth pages (LoginPage, WindowsHelloLockPage) from the back stack
         // so the user can never press Back into them after signing in.
         ContentFrame.BackStack.Clear();
+        UpdateTitleBar();
     }
+
+    // ── Navigation events ─────────────────────────────────────────────────────
 
     private void NavView_SelectionChanged(NavigationView sender,
         NavigationViewSelectionChangedEventArgs args)
@@ -99,47 +180,12 @@ public sealed partial class MainWindow : Window
             Navigate(tag);
     }
 
-    private void NavView_BackRequested(NavigationView sender,
-        NavigationViewBackRequestedEventArgs args)
-    {
-        if (ContentFrame.CanGoBack)
-            ContentFrame.GoBack();
-    }
-
     private void ContentFrame_Navigated(object sender,
         Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
-        // IsBackEnabled is bound via x:Bind in XAML, so no manual update needed.
-    }
-
-    private void NavView_PaneOpening(NavigationView sender, object args)
-        => SetNewNoteLabelVisible(true);
-
-    private void NavView_PaneClosing(NavigationView sender, NavigationViewPaneClosingEventArgs args)
-        => SetNewNoteLabelVisible(false);
-
-    /// <summary>Shows or hides the "New Note" label inside ComposeButton to match the pane state.</summary>
-    private void SetNewNoteLabelVisible(bool visible)
-    {
-        if (ComposeButton.Content is StackPanel panel)
-        {
-            foreach (var tb in panel.Children.OfType<TextBlock>())
-                tb.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        // The compact pane is only ~48 px wide. With the default 12 px side margins the
-        // button content area shrinks to ~24 px which clips the icon entirely.
-        // Use smaller margins/padding in compact mode so the icon is always visible.
-        if (visible)
-        {
-            ComposeButton.Margin  = new Thickness(12, 8, 12, 8);
-            ComposeButton.Padding = new Thickness(8, 5, 8, 6);
-        }
-        else
-        {
-            ComposeButton.Margin  = new Thickness(4, 8, 4, 8);
-            ComposeButton.Padding = new Thickness(4, 5, 4, 6);
-        }
+        // Keep the title bar title and back-button visibility in sync for all
+        // navigations — including GoBack() and navigations from within pages.
+        UpdateTitleBar();
     }
 
     private void ComposeButton_Click(object sender, RoutedEventArgs e)
@@ -149,17 +195,16 @@ public sealed partial class MainWindow : Window
     {
         if (!PageMap.TryGetValue(tag, out var pageType)) return;
 
-        // TimelinePage receives the timeline kind as a string parameter
         object? param = pageType == typeof(TimelinePage) ? tag : null;
 
-        // Skip only if we're already showing exactly this page with this tag.
-        // Comparing tag (not just type) is necessary because multiple tags share
-        // TimelinePage — without this, switching from Home to Local was silently dropped.
         if (_currentNavTag == tag && ContentFrame.CurrentSourcePageType == pageType) return;
 
         _currentNavTag = tag;
         ContentFrame.Navigate(pageType, param);
+        UpdateTitleBar();
     }
+
+    // ── Streaming ─────────────────────────────────────────────────────────────
 
     private async Task ConnectStreamingAsync()
     {
@@ -177,3 +222,4 @@ public sealed partial class MainWindow : Window
         }
     }
 }
+

@@ -8,15 +8,20 @@
     Title="Sharkey WinUI">
 
     <Grid>
+        <Grid.RowDefinitions>
+            <!-- Row 0: custom title bar (height matches AppTitleBar in code-behind) -->
+            <RowDefinition Height="40" />
+            <!-- Row 1: navigation + content; starts naturally below the title bar -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
         <NavigationView
             x:Name="NavView"
-            IsBackButtonVisible="Visible"
-            IsBackEnabled="{x:Bind ContentFrame.CanGoBack, Mode=OneWay}"
-            BackRequested="NavView_BackRequested"
+            Grid.Row="1"
+            IsBackButtonVisible="Collapsed"
+            IsPaneToggleButtonVisible="False"
             SelectionChanged="NavView_SelectionChanged"
             Loaded="NavView_Loaded"
-            PaneOpening="NavView_PaneOpening"
-            PaneClosing="NavView_PaneClosing"
             PaneDisplayMode="Left"
             OpenPaneLength="220">
 
@@ -114,5 +119,57 @@
 
             <Frame x:Name="ContentFrame" Navigated="ContentFrame_Navigated" />
         </NavigationView>
+
+        <!--
+            Custom title bar overlay.
+            Positioned at the top and registered via SetTitleBar() in code-behind.
+            The Height (40px) tells the NavigationView how much to offset its content.
+            Columns are padded in code-behind using AppWindow.TitleBar.LeftInset /
+            RightInset to avoid overlapping the OS caption (min/max/close) buttons.
+        -->
+        <!--
+            Title bar lives in row 0 (transparent → Mica shows through).
+            SetTitleBar() in code-behind registers it as the OS drag region and
+            tells the OS the title bar height is 40 px.
+            Left/Right padding columns are updated on SizeChanged to reserve
+            space for the OS caption buttons (min/max/close).
+        -->
+        <Grid x:Name="AppTitleBar"
+              Grid.Row="0"
+              Background="Transparent">
+            <Grid.ColumnDefinitions>
+                <!-- Reserved for OS caption buttons on the left (RTL / tablet) -->
+                <ColumnDefinition x:Name="LeftPaddingColumn" Width="0" />
+                <!-- Back button -->
+                <ColumnDefinition Width="Auto" />
+                <!-- Page title (non-interactive; passes clicks to NavView below) -->
+                <ColumnDefinition Width="Auto" />
+                <!-- Drag area -->
+                <ColumnDefinition Width="*" />
+                <!-- Reserved for OS caption buttons on the right (min/max/close) -->
+                <ColumnDefinition x:Name="RightPaddingColumn" Width="0" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Back button — shown only when frame can go back -->
+            <Button x:Name="TitleBarBackButton"
+                    Grid.Column="1"
+                    Width="40" Height="40"
+                    Padding="0"
+                    Visibility="Collapsed"
+                    Click="TitleBarBackButton_Click"
+                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
+                    ToolTipService.ToolTip="Back"
+                    AutomationProperties.Name="Back">
+                <FontIcon Glyph="&#xE76B;" FontSize="14" />
+            </Button>
+
+            <!-- Current page title -->
+            <TextBlock x:Name="TitleBarTitle"
+                       Grid.Column="2"
+                       VerticalAlignment="Center"
+                       Margin="8,0,0,0"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       IsHitTestVisible="False" />
+        </Grid>
     </Grid>
 </Window>
