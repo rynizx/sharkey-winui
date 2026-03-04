@@ -33,6 +33,14 @@ public sealed partial class NoteCard : UserControl
     public event Action<Note>? ReplyRequested;
     public event Action<Note>? RenoteRequested;
 
+    // ── State ─────────────────────────────────────────────────────────────────
+
+    // Tracks whether the displayed note has been favourited by the current user.
+    // Misskey/Sharkey note objects returned by timelines and search do NOT include
+    // an isFavorited field, so we maintain this as local UI state initialised to
+    // false on every Populate call.  The Favourite button toggles it optimistically.
+    private bool _isFavourited;
+
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public NoteCard()
@@ -122,8 +130,13 @@ public sealed partial class NoteCard : UserControl
         RepliesCountText.Text = displayNote.RepliesCount.ToString();
         RenoteCountText.Text  = displayNote.RenoteCount.ToString();
 
-        // Favourite icon state (filled if note has a current reaction that's a like)
-        FavouriteIcon.Glyph = displayNote.MyReaction != null ? "\uE735" : "\uE734";
+        // Favourite icon state — reset local tracking so the icon reflects the
+        // current note, not a stale state from a previously displayed note.
+        // MyReaction tracks emoji reactions, NOT favourites; they are separate
+        // Misskey API concepts. We have no inline favourite-status field from the
+        // API so we initialise to false and let the user toggle from here.
+        _isFavourited = false;
+        FavouriteIcon.Glyph = "\uE734"; // unfilled star
     }
 
     private void PopulateMedia(Note note)
@@ -411,20 +424,23 @@ public sealed partial class NoteCard : UserControl
     private void ReplyButton_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
-        ReplyRequested?.Invoke(Note);
-        FindParentFrame(this)?.Navigate(typeof(ComposePage), $"reply:{Note.Id}");
+        var displayNote = GetDisplayNote();
+        ReplyRequested?.Invoke(displayNote);
+        FindParentFrame(this)?.Navigate(typeof(ComposePage), $"reply:{displayNote.Id}");
     }
 
     private void RenoteButton_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
-        RenoteRequested?.Invoke(Note);
-        FindParentFrame(this)?.Navigate(typeof(ComposePage), $"renote:{Note.Id}");
+        var displayNote = GetDisplayNote();
+        RenoteRequested?.Invoke(displayNote);
+        FindParentFrame(this)?.Navigate(typeof(ComposePage), $"renote:{displayNote.Id}");
     }
 
     private async void ReactButton_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
+        var displayNote = GetDisplayNote();
         // Simple picker: show common reactions in a content dialog
         var dlg = new ContentDialog
         {
@@ -432,14 +448,16 @@ public sealed partial class NoteCard : UserControl
             CloseButtonText = "Cancel",
             XamlRoot = XamlRoot,
         };
-        var panel = new WrapGrid { Orientation = Orientation.Horizontal };
+        // WrapGrid without MaximumRowsOrColumns puts all items on one row;
+        // use 5 columns so the 10 emoji buttons wrap into 2 tidy rows.
+        var panel = new WrapGrid { Orientation = Orientation.Horizontal, MaximumRowsOrColumns = 5 };
         foreach (var r in new[] { "👍", "❤️", "😂", "😮", "😢", "😡", "🎉", "🔥", "✨", "👀" })
         {
             var btn = new Button { Content = r, FontSize = 20, Margin = new Thickness(4), Tag = r };
             btn.Click += (_, _) =>
             {
                 dlg.Hide();
-                _ = SendReactionAsync(Note.Id, (string)btn.Tag);
+                _ = SendReactionAsync(displayNote.Id, (string)btn.Tag);
             };
             panel.Children.Add(btn);
         }
@@ -451,7 +469,8 @@ public sealed partial class NoteCard : UserControl
     {
         try
         {
-            if (Note?.MyReaction == reaction)
+            // Check the displayed note's reaction, not the outer renote wrapper's
+            if (GetDisplayNote().MyReaction == reaction)
                 await App.ApiClient.RemoveReactionAsync(noteId);
             else
                 await App.ApiClient.AddReactionAsync(noteId, reaction);
@@ -462,18 +481,30 @@ public sealed partial class NoteCard : UserControl
     private async void FavouriteButton_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
+        var displayNote = GetDisplayNote();
         try
         {
-            await App.ApiClient.FavouriteNoteAsync(Note.Id);
-            FavouriteIcon.Glyph = "\uE735";
+            if (_isFavourited)
+            {
+                await App.ApiClient.UnfavouriteNoteAsync(displayNote.Id);
+                _isFavourited = false;
+                FavouriteIcon.Glyph = "\uE734";
+            }
+            else
+            {
+                await App.ApiClient.FavouriteNoteAsync(displayNote.Id);
+                _isFavourited = true;
+                FavouriteIcon.Glyph = "\uE735";
+            }
         }
-        catch { /* already favourited or other error */ }
+        catch { /* silently ignore — server may reject duplicate/missing favourites */ }
     }
 
     private void CopyLinkItem_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
-        var url = Note.Url ?? Note.Uri ?? $"{App.ApiClient.ServerUrl}/notes/{Note.Id}";
+        var displayNote = GetDisplayNote();
+        var url = displayNote.Url ?? displayNote.Uri ?? $"{App.ApiClient.ServerUrl}/notes/{displayNote.Id}";
         var dp = new DataPackage();
         dp.SetText(url);
         Clipboard.SetContent(dp);
@@ -482,7 +513,8 @@ public sealed partial class NoteCard : UserControl
     private async void OpenInBrowserItem_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
-        var url = Note.Url ?? Note.Uri ?? $"{App.ApiClient.ServerUrl}/notes/{Note.Id}";
+        var displayNote = GetDisplayNote();
+        var url = displayNote.Url ?? displayNote.Uri ?? $"{App.ApiClient.ServerUrl}/notes/{displayNote.Id}";
         await Launcher.LaunchUriAsync(new Uri(url));
     }
 
@@ -552,7 +584,7 @@ public sealed partial class NoteCard : UserControl
     private void ReactionButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.Tag is string reaction && Note != null)
-            _ = SendReactionAsync(Note.Id, reaction);
+            _ = SendReactionAsync(GetDisplayNote().Id, reaction);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

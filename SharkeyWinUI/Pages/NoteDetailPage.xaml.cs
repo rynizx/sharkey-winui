@@ -126,6 +126,12 @@ public sealed partial class NoteDetailPage : Page
     private void LoadMoreRepliesButton_Click(object sender, RoutedEventArgs e)
         => _ = LoadRepliesAsync(_cts.Token);
 
+    private void RepliesList_ItemClick(object sender, ItemClickEventArgs e)
+    {
+        if (e.ClickedItem is Note note)
+            Frame.Navigate(typeof(NoteDetailPage), note.Id);
+    }
+
     private void SetLoading(bool loading)
         => LoadingBar.Visibility = loading ? Visibility.Visible : Visibility.Collapsed;
 

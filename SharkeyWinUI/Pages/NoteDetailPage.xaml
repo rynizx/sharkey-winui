@@ -25,13 +25,23 @@
                        Margin="12,14,12,6" />
 
             <!-- Replies list -->
-            <ItemsControl x:Name="RepliesList" Margin="16,0,0,0">
-                <ItemsControl.ItemTemplate>
+            <ListView x:Name="RepliesList" Margin="16,0,0,0"
+                      SelectionMode="None"
+                      IsItemClickEnabled="True"
+                      ItemClick="RepliesList_ItemClick">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0,2" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
                     <DataTemplate>
                         <controls:NoteCard Note="{Binding}" />
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                </ListView.ItemTemplate>
+            </ListView>
 
             <!-- Load more replies -->
             <Button x:Name="LoadMoreRepliesButton"

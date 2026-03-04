@@ -123,10 +123,20 @@ public sealed partial class NotificationsPage : Page
 
     private void NotifList_ItemClick(object sender, ItemClickEventArgs e)
     {
-        if (e.ClickedItem is not Notification notif || notif.Note == null) return;
+        if (e.ClickedItem is not Notification notif) return;
         try
         {
-            Frame.Navigate(typeof(NoteDetailPage), notif.Note.Id);
+            if (notif.Note != null)
+            {
+                // Note-based notifications (mention, reply, renote, reaction, etc.)
+                Frame.Navigate(typeof(NoteDetailPage), notif.Note.Id);
+            }
+            else if (notif.User != null)
+            {
+                // User-based notifications with no note (follow, follow request, etc.)
+                Frame.Navigate(typeof(ProfilePage), notif.User.Id);
+            }
+            // Notifications with neither note nor user (achievements, exports) — no navigation
         }
         catch (Exception ex)
         {

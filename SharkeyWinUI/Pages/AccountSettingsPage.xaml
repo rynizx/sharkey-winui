@@ -9,25 +9,49 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <ScrollViewer>
-        <StackPanel MaxWidth="640" HorizontalAlignment="Center" Padding="24" Spacing="4">
+        <StackPanel MaxWidth="640" HorizontalAlignment="Center" Padding="24,20,24,32" Spacing="4">
 
-            <TextBlock Text="Account Settings"
-                       Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8" />
+            <!-- ── Page header ────────────────────────────────────────────── -->
+            <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,0,0,16">
+                <Border Width="40" Height="40" CornerRadius="8"
+                        Background="{ThemeResource AccentFillColorDefaultBrush}">
+                    <FontIcon Glyph="&#xE77B;" FontSize="20"
+                              Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel VerticalAlignment="Center" Spacing="1">
+                    <TextBlock Text="Account Settings"
+                               Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <TextBlock Text="Manage your profile, privacy and security"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+            </StackPanel>
 
-            <InfoBar x:Name="StatusBar" IsOpen="False" IsClosable="True" />
-            <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Visibility="Collapsed" />
+            <InfoBar x:Name="StatusBar" IsOpen="False" IsClosable="True" Margin="0,0,0,4" />
+            <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Visibility="Collapsed"
+                         Margin="0,0,0,4" />
 
             <!-- ── Profile ──────────────────────────────────────────────── -->
-            <Expander Header="Profile" IsExpanded="True" HorizontalAlignment="Stretch"
+            <Expander IsExpanded="True" HorizontalAlignment="Stretch"
                       HorizontalContentAlignment="Stretch">
+                <Expander.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE77B;" FontSize="16" VerticalAlignment="Center"
+                                  Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                        <TextBlock Text="Profile"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Expander.Header>
                 <StackPanel Spacing="12" Padding="0,8,0,8">
 
                     <TextBox x:Name="DisplayNameBox" Header="Display name"
                              PlaceholderText="Your display name" MaxLength="50" />
                     <!-- Rendered preview of the display name including remote emoji images -->
                     <StackPanel x:Name="DisplayNamePreview"
-                               Orientation="Horizontal"
-                               Visibility="Collapsed" />
+                                Orientation="Horizontal"
+                                Visibility="Collapsed" />
                     <TextBox x:Name="DescriptionBox" Header="Bio"
                              PlaceholderText="About yourself…"
                              AcceptsReturn="True" TextWrapping="Wrap"
@@ -55,41 +79,170 @@
             </Expander>
 
             <!-- ── Privacy ──────────────────────────────────────────────── -->
-            <Expander Header="Privacy" HorizontalAlignment="Stretch"
-                      HorizontalContentAlignment="Stretch">
+            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                <Expander.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE72E;" FontSize="16" VerticalAlignment="Center"
+                                  Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                        <TextBlock Text="Privacy"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Expander.Header>
                 <StackPanel Spacing="12" Padding="0,8,0,8">
 
-                    <ToggleSwitch x:Name="IsLockedSwitch"
-                                  Header="Lock account (approve followers)"
-                                  OffContent="Open" OnContent="Locked" />
-                    <ToggleSwitch x:Name="IsExplorableSwitch"
-                                  Header="Appear in explore / trending"
-                                  OffContent="Hidden" OnContent="Visible" />
-                    <ToggleSwitch x:Name="HideOnlineStatusSwitch"
-                                  Header="Hide online/active status"
-                                  OffContent="Visible" OnContent="Hidden" />
-                    <ToggleSwitch x:Name="PublicReactionsSwitch"
-                                  Header="Public reactions"
-                                  OffContent="Private" OnContent="Public" />
-                    <ToggleSwitch x:Name="PreventAiSwitch"
-                                  Header="Prevent AI training services"
-                                  OffContent="Off" OnContent="On" />
-                    <ToggleSwitch x:Name="NoCrawleSwitch"
-                                  Header="Block search engine indexing"
-                                  OffContent="Off" OnContent="On" />
+                    <!-- Toggle rows as Windows-Settings-style cards -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8">
+                        <StackPanel>
 
-                    <ComboBox x:Name="FollowingVisBox" Header="Following list visibility"
-                              HorizontalAlignment="Stretch">
-                        <ComboBoxItem Content="Public" Tag="public" IsSelected="True" />
-                        <ComboBoxItem Content="Followers only" Tag="followers" />
-                        <ComboBoxItem Content="Private" Tag="private" />
-                    </ComboBox>
-                    <ComboBox x:Name="FollowersVisBox" Header="Followers list visibility"
-                              HorizontalAlignment="Stretch">
-                        <ComboBoxItem Content="Public" Tag="public" IsSelected="True" />
-                        <ComboBoxItem Content="Followers only" Tag="followers" />
-                        <ComboBoxItem Content="Private" Tag="private" />
-                    </ComboBox>
+                            <!-- Lock account -->
+                            <Grid Padding="16,12" ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="Lock account" />
+                                    <TextBlock Text="New followers need your approval before they can follow you"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch x:Name="IsLockedSwitch" Grid.Column="1"
+                                             OffContent="" OnContent=""
+                                             VerticalAlignment="Center" Margin="0" />
+                            </Grid>
+
+                            <Rectangle Height="1" HorizontalAlignment="Stretch"
+                                       Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                            <!-- Appear in Explore -->
+                            <Grid Padding="16,12" ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="Appear in Explore" />
+                                    <TextBlock Text="Allow your profile and notes to show in Explore and trending"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch x:Name="IsExplorableSwitch" Grid.Column="1"
+                                             OffContent="" OnContent=""
+                                             VerticalAlignment="Center" Margin="0" />
+                            </Grid>
+
+                            <Rectangle Height="1" HorizontalAlignment="Stretch"
+                                       Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                            <!-- Hide online status -->
+                            <Grid Padding="16,12" ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="Hide online status" />
+                                    <TextBlock Text="Don't show when you were last active to other users"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch x:Name="HideOnlineStatusSwitch" Grid.Column="1"
+                                             OffContent="" OnContent=""
+                                             VerticalAlignment="Center" Margin="0" />
+                            </Grid>
+
+                            <Rectangle Height="1" HorizontalAlignment="Stretch"
+                                       Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                            <!-- Public reactions -->
+                            <Grid Padding="16,12" ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="Public reactions" />
+                                    <TextBlock Text="Let others see which notes you have reacted to"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch x:Name="PublicReactionsSwitch" Grid.Column="1"
+                                             OffContent="" OnContent=""
+                                             VerticalAlignment="Center" Margin="0" />
+                            </Grid>
+
+                            <Rectangle Height="1" HorizontalAlignment="Stretch"
+                                       Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                            <!-- Prevent AI training -->
+                            <Grid Padding="16,12" ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="Prevent AI training" />
+                                    <TextBlock Text="Request that your content is not used to train AI models"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch x:Name="PreventAiSwitch" Grid.Column="1"
+                                             OffContent="" OnContent=""
+                                             VerticalAlignment="Center" Margin="0" />
+                            </Grid>
+
+                            <Rectangle Height="1" HorizontalAlignment="Stretch"
+                                       Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                            <!-- Block search engine indexing -->
+                            <Grid Padding="16,12" ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="Block search engine indexing" />
+                                    <TextBlock Text="Add noindex hints to your public pages"
+                                               Style="{StaticResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch x:Name="NoCrawleSwitch" Grid.Column="1"
+                                             OffContent="" OnContent=""
+                                             VerticalAlignment="Center" Margin="0" />
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Visibility dropdowns -->
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ComboBox x:Name="FollowingVisBox" Header="Following list visibility"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBoxItem Content="Public" Tag="public" IsSelected="True" />
+                            <ComboBoxItem Content="Followers only" Tag="followers" />
+                            <ComboBoxItem Content="Private" Tag="private" />
+                        </ComboBox>
+                        <ComboBox x:Name="FollowersVisBox" Grid.Column="1"
+                                  Header="Followers list visibility"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBoxItem Content="Public" Tag="public" IsSelected="True" />
+                            <ComboBoxItem Content="Followers only" Tag="followers" />
+                            <ComboBoxItem Content="Private" Tag="private" />
+                        </ComboBox>
+                    </Grid>
 
                     <Button Content="Save privacy settings"
                             Style="{StaticResource AccentButtonStyle}"
@@ -98,17 +251,25 @@
             </Expander>
 
             <!-- ── Muted words ───────────────────────────────────────────── -->
-            <Expander Header="Muted words" HorizontalAlignment="Stretch"
-                      HorizontalContentAlignment="Stretch">
+            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                <Expander.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE74F;" FontSize="16" VerticalAlignment="Center"
+                                  Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                        <TextBlock Text="Muted Words"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Expander.Header>
                 <StackPanel Spacing="8" Padding="0,8,0,8">
                     <TextBlock TextWrapping="Wrap"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                Style="{StaticResource CaptionTextBlockStyle}">
-                        One entry per line. Use spaces between words to mute notes
-                        containing ALL those words. Use a single word to mute any note
-                        containing that word.
+                        One entry per line. Separate words with spaces to mute notes containing
+                        ALL of those words; a single word mutes any note containing it.
                     </TextBlock>
                     <TextBox x:Name="MutedWordsBox"
+                             Header="Muted words"
                              AcceptsReturn="True"
                              TextWrapping="Wrap"
                              MinHeight="100"
@@ -126,73 +287,156 @@
             </Expander>
 
             <!-- ── Security ──────────────────────────────────────────────── -->
-            <Expander Header="Security" HorizontalAlignment="Stretch"
-                      HorizontalContentAlignment="Stretch">
+            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                <Expander.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE8A2;" FontSize="16" VerticalAlignment="Center"
+                                  Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                        <TextBlock Text="Security"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Expander.Header>
                 <StackPanel Spacing="12" Padding="0,8,0,8">
 
-                    <!-- Change password -->
-                    <TextBlock Text="Change password"
-                               Style="{StaticResource BodyStrongTextBlockStyle}" />
-                    <PasswordBox x:Name="CurrentPasswordBox"
-                                 Header="Current password"
-                                 PlaceholderText="Enter current password" />
-                    <PasswordBox x:Name="NewPasswordBox"
-                                 Header="New password"
-                                 PlaceholderText="At least 8 characters" />
-                    <PasswordBox x:Name="ConfirmPasswordBox"
-                                 Header="Confirm new password"
-                                 PlaceholderText="Repeat new password" />
-                    <TextBox x:Name="PasswordTwoFactorBox"
-                             Header="2FA token (if enabled)"
-                             PlaceholderText="6-digit code" />
-                    <Button Content="Change password"
-                            Style="{StaticResource AccentButtonStyle}"
-                            Click="ChangePasswordButton_Click" />
+                    <!-- Change password card -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16,14">
+                        <StackPanel Spacing="12">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE965;" FontSize="14"
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                          VerticalAlignment="Center" />
+                                <TextBlock Text="Change password"
+                                           Style="{StaticResource BodyStrongTextBlockStyle}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                            <PasswordBox x:Name="CurrentPasswordBox"
+                                         Header="Current password"
+                                         PlaceholderText="Enter current password" />
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <PasswordBox x:Name="NewPasswordBox"
+                                             Header="New password"
+                                             PlaceholderText="At least 8 characters" />
+                                <PasswordBox x:Name="ConfirmPasswordBox" Grid.Column="1"
+                                             Header="Confirm new password"
+                                             PlaceholderText="Repeat new password" />
+                            </Grid>
+                            <TextBox x:Name="PasswordTwoFactorBox"
+                                     Header="2FA token (if enabled)"
+                                     PlaceholderText="6-digit code" />
+                            <Button Content="Change password"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    Click="ChangePasswordButton_Click" />
+                        </StackPanel>
+                    </Border>
 
-                    <MenuFlyoutSeparator Margin="0,8" />
-
-                    <!-- Change email -->
-                    <TextBlock Text="Change email address"
-                               Style="{StaticResource BodyStrongTextBlockStyle}" />
-                    <TextBox x:Name="NewEmailBox"
-                             Header="New email address"
-                             PlaceholderText="you@example.com"
-                             InputScope="EmailSmtpAddress" />
-                    <PasswordBox x:Name="EmailPasswordBox"
-                                 Header="Current password (required to change email)"
-                                 PlaceholderText="Enter current password" />
-                    <Button Content="Update email"
-                            Style="{StaticResource AccentButtonStyle}"
-                            Click="ChangeEmailButton_Click" />
+                    <!-- Change email card -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8" Padding="16,14">
+                        <StackPanel Spacing="12">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE715;" FontSize="14"
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                          VerticalAlignment="Center" />
+                                <TextBlock Text="Change email address"
+                                           Style="{StaticResource BodyStrongTextBlockStyle}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBox x:Name="NewEmailBox"
+                                     Header="New email address"
+                                     PlaceholderText="you@example.com"
+                                     InputScope="EmailSmtpAddress" />
+                            <PasswordBox x:Name="EmailPasswordBox"
+                                         Header="Current password (required to change email)"
+                                         PlaceholderText="Enter current password" />
+                            <Button Content="Update email"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    Click="ChangeEmailButton_Click" />
+                        </StackPanel>
+                    </Border>
 
                 </StackPanel>
             </Expander>
 
-            <!-- ── Notification settings link ────────────────────────────── -->
-            <HyperlinkButton Content="▸ Notification settings"
-                             Margin="0,8,0,0"
-                             Click="OpenNotifSettingsButton_Click" />
+            <!-- ── Notification settings nav card ─────────────────────────── -->
+            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                    Padding="16,14" Margin="0,4,0,0"
+                    Click="OpenNotifSettingsButton_Click">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <FontIcon Glyph="&#xEA8F;" FontSize="18" VerticalAlignment="Center"
+                              Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                    <StackPanel Grid.Column="1" Margin="14,0,0,0" Spacing="2"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="Notification Settings"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Text="Configure who can send each notification type and email alerts"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <FontIcon Grid.Column="2" Glyph="&#xE76C;" FontSize="12"
+                              VerticalAlignment="Center"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </Grid>
+            </Button>
 
             <!-- ── Windows Hello ─────────────────────────────────────────── -->
-            <Expander Header="Windows Hello" HorizontalAlignment="Stretch"
-                      HorizontalContentAlignment="Stretch">
+            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                <Expander.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xEE57;" FontSize="16" VerticalAlignment="Center"
+                                  Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
+                        <TextBlock Text="Windows Hello"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Expander.Header>
                 <StackPanel Spacing="12" Padding="0,8,0,8">
 
                     <TextBlock TextWrapping="Wrap"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                Style="{StaticResource CaptionTextBlockStyle}">
-                        When enabled, Windows will ask for your fingerprint, face,
-                        or PIN each time you open the app.  Your API token is always
-                        stored encrypted in the Windows Credential Manager.
+                        When enabled, Windows will ask for your fingerprint, face, or PIN
+                        each time you open the app. Your API token is always stored encrypted
+                        in the Windows Credential Manager.
                     </TextBlock>
 
                     <InfoBar x:Name="HelloStatusBar" IsOpen="False" IsClosable="False"
                              IsIconVisible="True" />
 
-                    <ToggleSwitch x:Name="HelloSwitch"
-                                  Header="Require Windows Hello on startup"
-                                  OffContent="Disabled" OnContent="Enabled"
-                                  Toggled="HelloSwitch_Toggled" />
+                    <!-- Hello toggle row -->
+                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1" CornerRadius="8">
+                        <Grid Padding="16,12" ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2" VerticalAlignment="Center">
+                                <TextBlock Text="Require Windows Hello on startup" />
+                                <TextBlock Text="Biometric or PIN check each time the app is launched"
+                                           Style="{StaticResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ToggleSwitch x:Name="HelloSwitch" Grid.Column="1"
+                                         OffContent="" OnContent=""
+                                         VerticalAlignment="Center" Margin="0"
+                                         Toggled="HelloSwitch_Toggled" />
+                        </Grid>
+                    </Border>
 
                 </StackPanel>
             </Expander>

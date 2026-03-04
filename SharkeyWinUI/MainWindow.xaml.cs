@@ -123,6 +123,20 @@ public sealed partial class MainWindow : Window
             foreach (var tb in panel.Children.OfType<TextBlock>())
                 tb.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         }
+
+        // The compact pane is only ~48 px wide. With the default 12 px side margins the
+        // button content area shrinks to ~24 px which clips the icon entirely.
+        // Use smaller margins/padding in compact mode so the icon is always visible.
+        if (visible)
+        {
+            ComposeButton.Margin  = new Thickness(12, 8, 12, 8);
+            ComposeButton.Padding = new Thickness(8, 5, 8, 6);
+        }
+        else
+        {
+            ComposeButton.Margin  = new Thickness(4, 8, 4, 8);
+            ComposeButton.Padding = new Thickness(4, 5, 4, 6);
+        }
     }
 
     private void ComposeButton_Click(object sender, RoutedEventArgs e)
