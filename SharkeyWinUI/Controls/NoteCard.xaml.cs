@@ -135,6 +135,8 @@ public sealed partial class NoteCard : UserControl
             ? new GridLength(160)
             : new GridLength(0);
 
+        var hasSensitive = images.Any(f => f.IsSensitive);
+
         for (int i = 0; i < images.Count; i++)
         {
             var file = images[i];
@@ -165,6 +167,58 @@ public sealed partial class NoteCard : UserControl
             Grid.SetColumn(wrapper, i % 2);
             MediaGrid.Children.Add(wrapper);
         }
+
+        // If any file is sensitive, add a full-grid overlay that can be dismissed
+        if (hasSensitive)
+        {
+            var overlayBackground = Application.Current.Resources["LayerFillColorDefaultBrush"]
+                as Microsoft.UI.Xaml.Media.Brush;
+            if (overlayBackground is null)
+            {
+                // Fallback to a semi-transparent black brush to ensure the overlay obscures media
+                overlayBackground = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                    Windows.UI.Color.FromArgb(0x99, 0x00, 0x00, 0x00));
+            }
+
+            var overlay = new Border
+            {
+                Background = overlayBackground,
+                CornerRadius = new Microsoft.UI.Xaml.CornerRadius(6),
+            };
+
+            var revealBtn = new Button
+            {
+                Content = new StackPanel
+                {
+                    Orientation = Orientation.Vertical,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Spacing = 6,
+                    Children =
+                    {
+                        new FontIcon { Glyph = "\uE7B3", FontSize = 24 },
+                        new TextBlock
+                        {
+                            Text = "Sensitive media",
+                            Style = Application.Current.Resources["CaptionTextBlockStyle"] as Style,
+                        },
+                        new TextBlock
+                        {
+                            Text = "Click to show",
+                            Style = Application.Current.Resources["CaptionTextBlockStyle"] as Style,
+                            Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                        },
+                    },
+                },
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            revealBtn.Click += (_, _) => overlay.Visibility = Visibility.Collapsed;
+
+            overlay.Child = revealBtn;
+            Grid.SetRowSpan(overlay, 2);
+            Grid.SetColumnSpan(overlay, 2);
+            MediaGrid.Children.Add(overlay);
+        }
     }
 
     private void PopulatePoll(Note note)
@@ -178,11 +232,16 @@ public sealed partial class NoteCard : UserControl
 
         PollPanel.Visibility = Visibility.Visible;
         var total = note.Poll.TotalVotes;
+        var canVote = !note.Poll.IsExpired &&
+                      (note.Poll.Multiple || note.Poll.Choices.All(c => !c.IsVoted));
 
-        foreach (var choice in note.Poll.Choices)
+        for (int i = 0; i < note.Poll.Choices.Count; i++)
         {
+            var choice = note.Poll.Choices[i];
+            var choiceIndex = i;
             var pct = total > 0 ? (double)choice.Votes / total : 0;
-            var row = new Grid { ColumnSpacing = 8 };
+
+            var row = new Grid { ColumnSpacing = 8, Margin = new Thickness(0, 0, 0, 2) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -211,19 +270,85 @@ public sealed partial class NoteCard : UserControl
             row.Children.Add(voted);
             row.Children.Add(bar);
             row.Children.Add(label);
-            PollPanel.Children.Add(row);
+
+            if (canVote && !choice.IsVoted)
+            {
+                // Wrap in a button so the user can tap to vote
+                var btn = new Button
+                {
+                    Content = row,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                    Padding = new Thickness(0),
+                    Tag = choiceIndex,
+                };
+                btn.Click += PollChoiceButton_Click;
+                PollPanel.Children.Add(btn);
+            }
+            else
+            {
+                PollPanel.Children.Add(row);
+            }
         }
 
+        // Footer: total votes + expiry
+        var footerText = $"{total} vote{(total != 1 ? "s" : "")}";
         if (note.Poll.ExpiresAt.HasValue)
+            footerText += note.Poll.IsExpired
+                ? " · Poll ended"
+                : $" · Ends {note.Poll.ExpiresAt.Value:g}";
+
+        PollPanel.Children.Add(new TextBlock
         {
-            PollPanel.Children.Add(new TextBlock
+            Text = footerText,
+            Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+            Style = Application.Current.Resources["CaptionTextBlockStyle"] as Style,
+            Margin = new Thickness(0, 4, 0, 0),
+        });
+    }
+
+    private async void PollChoiceButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (Note == null || sender is not Button btn || btn.Tag is not int choiceIndex) return;
+        var displayNote = GetDisplayNote();
+
+        // Disable all poll choice buttons to prevent double-taps while the request is in-flight.
+        foreach (var b in PollPanel.Children.OfType<Button>()) b.IsEnabled = false;
+
+        try
+        {
+            await App.ApiClient.VotePollAsync(displayNote.Id, choiceIndex);
+            // Refresh the note to pick up updated vote counts, then re-render the poll
+            var updated = await App.ApiClient.GetNoteAsync(displayNote.Id);
+            PopulatePoll(updated);
+        }
+        catch (MisskeyApiException ex)
+        {
+            var dlg = new ContentDialog
             {
-                Text = note.Poll.IsExpired
-                    ? "Poll ended"
-                    : $"Ends {note.Poll.ExpiresAt.Value:g}",
-                Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
-                Style = Application.Current.Resources["CaptionTextBlockStyle"] as Style,
-            });
+                Title = "Could not vote",
+                Content = $"The server returned an error: {ex.ResponseBody}",
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot,
+            };
+            await dlg.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            var dlg = new ContentDialog
+            {
+                Title = "Could not vote",
+                Content = ex.Message,
+                CloseButtonText = "OK",
+                XamlRoot = XamlRoot,
+            };
+            await dlg.ShowAsync();
+        }
+        finally
+        {
+            // Re-enable whichever buttons are currently in PollPanel (original ones on error,
+            // newly-populated ones on success — already enabled, so this is a safe no-op).
+            foreach (var b in PollPanel.Children.OfType<Button>()) b.IsEnabled = true;
         }
     }
 
@@ -350,6 +475,50 @@ public sealed partial class NoteCard : UserControl
         await Launcher.LaunchUriAsync(new Uri(url));
     }
 
+    private async void MuteUserItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (Note == null) return;
+        var displayNote = GetDisplayNote();
+        var userId = displayNote.User?.Id;
+        if (userId == null) return;
+        var dlg = new ContentDialog
+        {
+            Title = "Mute user",
+            Content = $"Mute @{displayNote.User?.Username}? Their notes will no longer appear in your timelines.",
+            PrimaryButtonText = "Mute",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot,
+        };
+        if (await dlg.ShowAsync() == ContentDialogResult.Primary)
+        {
+            try { await App.ApiClient.MuteUserAsync(userId); }
+            catch { /* surface error */ }
+        }
+    }
+
+    private async void BlockUserItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (Note == null) return;
+        var displayNote = GetDisplayNote();
+        var userId = displayNote.User?.Id;
+        if (userId == null) return;
+        var dlg = new ContentDialog
+        {
+            Title = "Block user",
+            Content = $"Block @{displayNote.User?.Username}? They will not be able to follow you or see your notes.",
+            PrimaryButtonText = "Block",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot,
+        };
+        if (await dlg.ShowAsync() == ContentDialogResult.Primary)
+        {
+            try { await App.ApiClient.BlockUserAsync(userId); }
+            catch { /* surface error */ }
+        }
+    }
+
     private async void DeleteNoteItem_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
@@ -376,6 +545,13 @@ public sealed partial class NoteCard : UserControl
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns the note to display — the inner note when this is a pure renote,
+    /// or the note itself otherwise.
+    /// </summary>
+    private Note GetDisplayNote() =>
+        Note != null && Note.IsPureRenote && Note.Renote != null ? Note.Renote : Note!;
 
     private static string RelativeTime(DateTimeOffset dt)
     {

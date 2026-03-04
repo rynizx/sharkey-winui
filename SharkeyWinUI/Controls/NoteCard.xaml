@@ -191,6 +191,13 @@
                                 <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE774;" /></MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
                             <MenuFlyoutSeparator />
+                            <MenuFlyoutItem x:Name="MuteUserItem" Text="Mute user" Click="MuteUserItem_Click">
+                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xF164;" /></MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem x:Name="BlockUserItem" Text="Block user" Click="BlockUserItem_Click">
+                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8F8;" /></MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutSeparator />
                             <MenuFlyoutItem x:Name="DeleteNoteItem" Text="Delete note" Click="DeleteNoteItem_Click"
                                             Foreground="{ThemeResource SystemFillColorCriticalBrush}">
                                 <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE74D;" /></MenuFlyoutItem.Icon>
