@@ -17,6 +17,8 @@ namespace SharkeyWinUI.Helpers;
 /// </remarks>
 internal static class EmojiTextHelper
 {
+    private static readonly Regex ShortcodePattern = new(@":([\w+-]+):", RegexOptions.Compiled);
+
     /// <summary>
     /// Populates a horizontal <see cref="StackPanel"/> with text that may contain custom emoji
     /// shortcodes. Shortcodes present in <paramref name="emojis"/> are replaced
@@ -42,7 +44,7 @@ internal static class EmojiTextHelper
             return;
         }
 
-        var matches = Regex.Matches(text, @":([\w+-]+):");
+        var matches = ShortcodePattern.Matches(text);
         var lastIndex = 0;
 
         foreach (Match match in matches)

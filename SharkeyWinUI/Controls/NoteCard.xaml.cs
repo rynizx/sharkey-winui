@@ -54,6 +54,17 @@ public sealed partial class NoteCard : UserControl
     // Track dynamically created event handlers for proper cleanup
     private readonly List<(Button button, RoutedEventHandler handler)> _dynamicHandlers = new();
 
+    // Track poll choice button handlers separately so they can be cleaned up
+    // when the poll is re-rendered after a vote, without waiting for the next Populate call.
+    private readonly List<(Button button, RoutedEventHandler handler)> _pollHandlers = new();
+
+    // Tracks the last avatar URL set so we skip re-creating BitmapImage when unchanged.
+    private string? _lastAvatarUrl;
+
+    // Static caches for app-global style and brush resources — looked up once per key.
+    private static readonly Dictionary<string, Style?> _styleCache = new();
+    private static readonly Dictionary<string, Microsoft.UI.Xaml.Media.Brush> _brushCache = new();
+
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public NoteCard()
@@ -66,128 +77,165 @@ public sealed partial class NoteCard : UserControl
 
     private void Populate(Note? note)
     {
-        if (note == null) return;
-
-        // Clean up any previous dynamic handlers before populating new content
-        CleanupDynamicHandlers();
-
-        // If this is a pure renote, show the renote header and display the target
-        Note displayNote = note;
-        if (note.IsPureRenote && note.Renote != null)
+        try
         {
-            RenoteHeader.Visibility = Visibility.Visible;
+            if (note == null)
+            {
+                Debug.WriteLine("NoteCard: Populate called with null note");
+                return;
+            }
+
+            // Clean up any previous dynamic handlers before populating new content
+            CleanupDynamicHandlers();
+
+            // If this is a pure renote, show the renote header and display the target
+            Note displayNote = note;
+            if (note.IsPureRenote && note.Renote != null)
+            {
+                RenoteHeader.Visibility = Visibility.Visible;
+                EmojiTextHelper.SetTextWithEmojis(
+                        RenoteByText,
+                        $"{note.User?.EffectiveName ?? note.User?.Username} renoted",
+                        note.User?.Emojis,
+                        GetStyleResource("CaptionTextBlockStyle"),
+                        GetBrushResource("TextFillColorSecondaryBrush"));
+                displayNote = note.Renote;
+            }
+            else
+            {
+                RenoteHeader.Visibility = Visibility.Collapsed;
+            }
+
+            // Avatar — skip re-creating BitmapImage when the URL hasn't changed
+            var avatarUrl = displayNote.User?.AvatarUrl;
+            if (!string.IsNullOrEmpty(avatarUrl) && avatarUrl != _lastAvatarUrl)
+            {
+                _lastAvatarUrl = avatarUrl;
+                try
+                {
+                    if (Uri.TryCreate(avatarUrl, UriKind.Absolute, out var avatarUri))
+                    {
+                        // Decode at 2× the 42 px render size so it looks sharp on HiDPI.
+                        AvatarBrush.ImageSource = new BitmapImage(avatarUri)
+                        {
+                            DecodePixelWidth  = 84,
+                            DecodePixelHeight = 84,
+                        };
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"NoteCard: Invalid avatar URL: {avatarUrl}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"NoteCard: Failed to load avatar: {ex.Message}");
+                }
+            }
+            else if (string.IsNullOrEmpty(avatarUrl))
+            {
+                _lastAvatarUrl = null;
+                AvatarBrush.ImageSource = null;
+            }
+
+            // User names
             EmojiTextHelper.SetTextWithEmojis(
-                    RenoteByText,
-                    $"{note.User?.EffectiveName ?? note.User?.Username} renoted",
-                    note.User?.Emojis,
-                    GetStyleResource("CaptionTextBlockStyle"),
-                    GetBrushResource("TextFillColorSecondaryBrush"));
-            displayNote = note.Renote;
-        }
-        else
-        {
-            RenoteHeader.Visibility = Visibility.Collapsed;
-        }
+                DisplayNameText,
+                displayNote.User?.EffectiveName ?? displayNote.User?.Username ?? "Unknown",
+                displayNote.User?.Emojis,
+                GetStyleResource("BodyStrongTextBlockStyle"));
+            UsernameText.Text = displayNote.User?.FullUsername ?? string.Empty;
 
-        // Avatar
-        if (!string.IsNullOrEmpty(displayNote.User?.AvatarUrl))
+            // Remote instance badge
+            if (displayNote.User?.IsRemote == true && displayNote.User.Instance?.Name != null)
+            {
+                InstanceBadge.Visibility = Visibility.Visible;
+                InstanceBadgeText.Text = displayNote.User.Instance.Name;
+            }
+            else
+            {
+                InstanceBadge.Visibility = Visibility.Collapsed;
+            }
+
+            // Timestamp (relative)
+            TimestampText.Text = RelativeTime(displayNote.CreatedAt);
+
+            // Content warning
+            if (displayNote.HasContentWarning)
+            {
+                CwPanel.Visibility = Visibility.Visible;
+                CwText.Text = displayNote.ContentWarning!;
+                BodyText.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                CwPanel.Visibility = Visibility.Collapsed;
+                BodyText.Visibility = Visibility.Visible;
+            }
+
+            // Body text (plain — full MFM rendering would require a parser)
+            BodyText.Text = displayNote.DisplayText ?? string.Empty;
+
+            // Media
+            PopulateMedia(displayNote);
+
+            // Poll
+            PopulatePoll(displayNote);
+
+            // Reactions
+            PopulateReactions(displayNote);
+
+            // Action bar counts
+            RepliesCountText.Text = displayNote.RepliesCount.ToString();
+            RenoteCountText.Text  = displayNote.RenoteCount.ToString();
+
+            // Favourite icon state — reset local tracking so the icon reflects the
+            // current note, not a stale state from a previously displayed note.
+            // MyReaction tracks emoji reactions, NOT favourites; they are separate
+            // Misskey API concepts. We have no inline favourite-status field from the
+            // API so we initialise to false and let the user toggle from here.
+            _isFavourited = false;
+            FavouriteIcon.Glyph = "\uE734"; // unfilled star
+        }
+        catch (Exception ex)
         {
+            Debug.WriteLine($"NoteCard: Critical error in Populate: {ex.Message}");
+            Debug.WriteLine($"NoteCard: Stack trace: {ex.StackTrace}");
+            // Try to show error state to user
             try
             {
-                if (Uri.TryCreate(displayNote.User.AvatarUrl, UriKind.Absolute, out var avatarUri))
-                {
-                    AvatarBrush.ImageSource = new BitmapImage(avatarUri);
-                }
-                else
-                {
-                    Debug.WriteLine($"NoteCard: Invalid avatar URL: {displayNote.User.AvatarUrl}");
-                }
+                BodyText.Text = $"Error loading note: {ex.Message}";
+                BodyText.Visibility = Visibility.Visible;
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"NoteCard: Failed to load avatar: {ex.Message}");
-            }
+            catch { /* Can't even show error */ }
         }
-
-        // User names
-        EmojiTextHelper.SetTextWithEmojis(
-            DisplayNameText,
-            displayNote.User?.EffectiveName ?? displayNote.User?.Username ?? "Unknown",
-            displayNote.User?.Emojis,
-            GetStyleResource("BodyStrongTextBlockStyle"));
-        UsernameText.Text = displayNote.User?.FullUsername ?? string.Empty;
-
-        // Remote instance badge
-        if (displayNote.User?.IsRemote == true && displayNote.User.Instance?.Name != null)
-        {
-            InstanceBadge.Visibility = Visibility.Visible;
-            InstanceBadgeText.Text = displayNote.User.Instance.Name;
-        }
-        else
-        {
-            InstanceBadge.Visibility = Visibility.Collapsed;
-        }
-
-        // Timestamp (relative)
-        TimestampText.Text = RelativeTime(displayNote.CreatedAt);
-
-        // Content warning
-        if (displayNote.HasContentWarning)
-        {
-            CwPanel.Visibility = Visibility.Visible;
-            CwText.Text = displayNote.ContentWarning!;
-            BodyText.Visibility = Visibility.Collapsed;
-        }
-        else
-        {
-            CwPanel.Visibility = Visibility.Collapsed;
-            BodyText.Visibility = Visibility.Visible;
-        }
-
-        // Body text (plain — full MFM rendering would require a parser)
-        BodyText.Text = displayNote.DisplayText;
-
-        // Media
-        PopulateMedia(displayNote);
-
-        // Poll
-        PopulatePoll(displayNote);
-
-        // Reactions
-        PopulateReactions(displayNote);
-
-        // Action bar counts
-        RepliesCountText.Text = displayNote.RepliesCount.ToString();
-        RenoteCountText.Text  = displayNote.RenoteCount.ToString();
-
-        // Favourite icon state — reset local tracking so the icon reflects the
-        // current note, not a stale state from a previously displayed note.
-        // MyReaction tracks emoji reactions, NOT favourites; they are separate
-        // Misskey API concepts. We have no inline favourite-status field from the
-        // API so we initialise to false and let the user toggle from here.
-        _isFavourited = false;
-        FavouriteIcon.Glyph = "\uE734"; // unfilled star
     }
 
     private void PopulateMedia(Note note)
     {
-        if (!note.HasMedia)
+        try
         {
-            MediaGrid.Visibility = Visibility.Collapsed;
-            return;
-        }
+            if (!note.HasMedia)
+            {
+                MediaGrid.Visibility = Visibility.Collapsed;
+                return;
+            }
 
-        MediaGrid.Visibility = Visibility.Visible;
-        // Clear previous children
-        foreach (var child in GetGridChildren(MediaGrid).ToList())
-            MediaGrid.Children.Remove(child);
+            MediaGrid.Children.Clear();
 
-        var images = note.Files.Where(f => f.IsImage).Take(4).ToList();
+            var images = note.Files.Where(f => f.IsImage).Take(4).ToList();
+            if (images.Count == 0)
+            {
+                MediaGrid.Visibility = Visibility.Collapsed;
+                return;
+            }
 
-        // Collapse the second row when there are 1-2 images
-        MediaGrid.RowDefinitions[1].Height = images.Count > 2
-            ? new GridLength(160)
-            : new GridLength(0);
+            MediaGrid.Visibility = Visibility.Visible;
+
+            // Collapse the second row when there are 1-2 images
+            MediaGrid.RowDefinitions[1].Height = images.Count > 2
+                ? new GridLength(160)
+                : new GridLength(0);
 
         var hasSensitive = images.Any(f => f.IsSensitive);
 
@@ -206,7 +254,8 @@ public sealed partial class NoteCard : UserControl
                 {
                     if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var imageUri))
                     {
-                        img.Source = new BitmapImage(imageUri);
+                        // Constrain decode width to avoid decoding full-resolution images into memory.
+                        img.Source = new BitmapImage(imageUri) { DecodePixelWidth = 400 };
                     }
                     else
                     {
@@ -283,6 +332,12 @@ public sealed partial class NoteCard : UserControl
             Grid.SetColumnSpan(overlay, 2);
             MediaGrid.Children.Add(overlay);
         }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NoteCard: Error in PopulateMedia: {ex.Message}");
+            MediaGrid.Visibility = Visibility.Collapsed;
+        }
     }
 
     /// <summary>
@@ -295,19 +350,33 @@ public sealed partial class NoteCard : UserControl
             button.Click -= handler;
         }
         _dynamicHandlers.Clear();
+
+        CleanupPollHandlers();
+    }
+
+    private void CleanupPollHandlers()
+    {
+        foreach (var (button, handler) in _pollHandlers)
+            button.Click -= handler;
+        _pollHandlers.Clear();
     }
 
     private void PopulatePoll(Note note)
     {
-        CleanupDynamicHandlers();
-        PollPanel.Children.Clear();
-        if (note.Poll == null)
+        try
         {
-            PollPanel.Visibility = Visibility.Collapsed;
-            return;
-        }
+            // Clean up poll choice button handlers before rebuilding the panel.
+            // This is necessary when PopulatePoll is called directly (e.g. after a vote)
+            // rather than via Populate, so stale handlers don't accumulate.
+            CleanupPollHandlers();
+            PollPanel.Children.Clear();
+            if (note.Poll == null)
+            {
+                PollPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
 
-        PollPanel.Visibility = Visibility.Visible;
+            PollPanel.Visibility = Visibility.Visible;
         var total = note.Poll.TotalVotes;
         var canVote = !note.Poll.IsExpired &&
                       (note.Poll.Multiple || note.Poll.Choices.All(c => !c.IsVoted));
@@ -361,7 +430,7 @@ public sealed partial class NoteCard : UserControl
                 };
                 RoutedEventHandler handler = PollChoiceButton_Click;
                 btn.Click += handler;
-                _dynamicHandlers.Add((btn, handler));
+                _pollHandlers.Add((btn, handler));
                 PollPanel.Children.Add(btn);
             }
             else
@@ -384,6 +453,12 @@ public sealed partial class NoteCard : UserControl
             Style = GetStyleResource("CaptionTextBlockStyle"),
             Margin = new Thickness(0, 4, 0, 0),
         });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NoteCard: Error in PopulatePoll: {ex.Message}");
+            PollPanel.Visibility = Visibility.Collapsed;
+        }
     }
 
     private async void PollChoiceButton_Click(object sender, RoutedEventArgs e)
@@ -434,34 +509,41 @@ public sealed partial class NoteCard : UserControl
 
     private void PopulateReactions(Note note)
     {
-        ReactionsPanel.Items.Clear();
-        foreach (var kv in note.Reactions)
+        try
         {
-            var btn = new Button
+            ReactionsPanel.Items.Clear();
+            foreach (var kv in note.Reactions)
             {
-                Content = new StackPanel
+                var btn = new Button
                 {
-                    Orientation = Orientation.Horizontal,
-                    Spacing = 4,
-                    Children =
+                    Content = new StackPanel
                     {
-                        new TextBlock { Text = kv.Key, FontSize = 16 },
-                        new TextBlock
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 4,
+                        Children =
                         {
-                            Text = kv.Value.ToString(),
-                            VerticalAlignment = VerticalAlignment.Center,
-                        },
-                    }
-                },
-                Margin = new Thickness(0, 0, 4, 4),
-                Tag = kv.Key,
-            };
-            if (note.MyReaction == kv.Key)
-                btn.Style = GetStyleResource("AccentButtonStyle");
-            RoutedEventHandler handler = ReactionButton_Click;
-            btn.Click += handler;
-            _dynamicHandlers.Add((btn, handler));
-            ReactionsPanel.Items.Add(btn);
+                            new TextBlock { Text = kv.Key, FontSize = 16 },
+                            new TextBlock
+                            {
+                                Text = kv.Value.ToString(),
+                                VerticalAlignment = VerticalAlignment.Center,
+                            },
+                        }
+                    },
+                    Margin = new Thickness(0, 0, 4, 4),
+                    Tag = kv.Key,
+                };
+                if (note.MyReaction == kv.Key)
+                    btn.Style = GetStyleResource("AccentButtonStyle");
+                RoutedEventHandler handler = ReactionButton_Click;
+                btn.Click += handler;
+                _dynamicHandlers.Add((btn, handler));
+                ReactionsPanel.Items.Add(btn);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NoteCard: Error in PopulateReactions: {ex.Message}");
         }
     }
 
@@ -741,23 +823,32 @@ public sealed partial class NoteCard : UserControl
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Safely retrieves a style resource with fallback.
+    /// Safely retrieves a style resource, caching successful lookups.
     /// </summary>
     private static Style? GetStyleResource(string key)
     {
+        if (_styleCache.TryGetValue(key, out var cached)) return cached;
         if (Application.Current.Resources.TryGetValue(key, out var resource) && resource is Style style)
+        {
+            _styleCache[key] = style;
             return style;
+        }
         Debug.WriteLine($"NoteCard: Style resource '{key}' not found");
+        _styleCache[key] = null;
         return null;
     }
 
     /// <summary>
-    /// Safely retrieves a brush resource with fallback to a default.
+    /// Safely retrieves a brush resource, caching successful lookups.
     /// </summary>
     private static Microsoft.UI.Xaml.Media.Brush GetBrushResource(string key, Microsoft.UI.Xaml.Media.Brush? fallback = null)
     {
+        if (_brushCache.TryGetValue(key, out var cached)) return cached;
         if (Application.Current.Resources.TryGetValue(key, out var resource) && resource is Microsoft.UI.Xaml.Media.Brush brush)
+        {
+            _brushCache[key] = brush;
             return brush;
+        }
         Debug.WriteLine($"NoteCard: Brush resource '{key}' not found, using fallback");
         return fallback ?? new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x80, 0x80, 0x80));
     }
@@ -768,12 +859,6 @@ public sealed partial class NoteCard : UserControl
     /// </summary>
     private async Task<ContentDialogResult> ShowDialogAsync(ContentDialog dialog)
     {
-        // Wait a bit for XamlRoot to be available if control was just created
-        for (int i = 0; i < 10 && XamlRoot == null; i++)
-        {
-            await Task.Delay(50);
-        }
-
         if (XamlRoot == null)
         {
             Debug.WriteLine("NoteCard: Cannot show dialog - XamlRoot is null");

@@ -314,7 +314,7 @@ internal sealed class DrivePickerDialog : ContentDialog
 {
     public DriveFile? SelectedFile { get; private set; }
 
-    private readonly ListView _list = new() { Height = 300 };
+    private readonly ListView _list = new() { Height = 300, DisplayMemberPath = "Name" };
     private string? _untilId;
 
     public DrivePickerDialog()

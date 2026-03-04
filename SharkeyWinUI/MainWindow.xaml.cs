@@ -81,6 +81,9 @@ public sealed partial class MainWindow : Window
         ComposeButton.Visibility = Visibility.Visible;
         NavView.SelectedItem = HomeItem;
         Navigate("home");
+        // Remove auth pages (LoginPage, WindowsHelloLockPage) from the back stack
+        // so the user can never press Back into them after signing in.
+        ContentFrame.BackStack.Clear();
     }
 
     private void NavView_SelectionChanged(NavigationView sender,

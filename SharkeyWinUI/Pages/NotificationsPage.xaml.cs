@@ -19,15 +19,16 @@ public sealed partial class NotificationsPage : Page
 
     public NotificationsPage()
     {
-        InitializeComponent();
-        NotifList.ItemsSource = _notifs;
-
-        // Register value converters used in XAML
+        // Register value converters BEFORE InitializeComponent
+        // so they're available when XAML is parsed
         Resources["RelTimeConverter"]          = new RelativeTimeConverter();
         Resources["NotifIconConverter"]        = new NotificationIconConverter();
         Resources["ReadBrushConverter"]        = new ReadBrushConverter();
         Resources["NullVisibilityConverter"]   = new NullToVisibilityConverter();
         Resources["UnreadVisibilityConverter"] = new IsReadToVisibilityConverter();
+
+        InitializeComponent();
+        NotifList.ItemsSource = _notifs;
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)

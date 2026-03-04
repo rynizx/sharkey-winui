@@ -14,7 +14,6 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Header -->
@@ -38,6 +37,12 @@
         <InfoBar x:Name="ErrorBar" Grid.Row="1" IsOpen="False" IsClosable="True"
                  Severity="Error" />
 
+        <!-- Loading indicator — sits at the top of the list area as a thin overlay -->
+        <ProgressBar x:Name="LoadingBar" Grid.Row="2"
+                     IsIndeterminate="True"
+                     VerticalAlignment="Top"
+                     Visibility="Collapsed" />
+
         <!-- Notes list -->
         <ListView x:Name="NotesList"
                   Grid.Row="2"
@@ -45,6 +50,11 @@
                   SelectionMode="None"
                   IsItemClickEnabled="True"
                   ItemClick="NotesList_ItemClick">
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsStackPanel ItemsUpdatingScrollMode="KeepScrollOffset" />
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -66,7 +76,5 @@
             </ListView.Footer>
         </ListView>
 
-        <!-- Loading indicator -->
-        <ProgressBar x:Name="LoadingBar" Grid.Row="3" IsIndeterminate="True" Visibility="Collapsed" />
     </Grid>
 </Page>
