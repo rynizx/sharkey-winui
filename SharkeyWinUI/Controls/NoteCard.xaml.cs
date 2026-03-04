@@ -6,6 +6,7 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.System;
 using SharkeyWinUI.Models;
 using SharkeyWinUI.Pages;
+using SharkeyWinUI.Services;
 
 namespace SharkeyWinUI.Controls;
 
