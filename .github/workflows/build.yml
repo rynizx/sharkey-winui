@@ -157,7 +157,7 @@ jobs:
           -p:Platform=x64
           -p:PublishSingleFile=false
           -p:WindowsPackageType=MSIX
-          -p:AppxPackageDir=./artifacts/msix/
+          -p:AppxPackageDir=${{ github.workspace }}/artifacts/msix/
           -p:GenerateAppxPackageOnBuild=true
           -p:AppxPackageSigningEnabled=false
           -p:Version=${{ steps.version.outputs.VERSION }}
