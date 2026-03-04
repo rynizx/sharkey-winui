@@ -146,13 +146,23 @@
             <TextBlock Text="Notes" Padding="20,4,20,8"
                        Style="{StaticResource BodyStrongTextBlockStyle}" />
 
-            <ItemsControl x:Name="NotesList" Margin="8,0">
-                <ItemsControl.ItemTemplate>
+            <ListView x:Name="NotesList" Margin="8,0"
+                      SelectionMode="None"
+                      IsItemClickEnabled="True"
+                      ItemClick="NotesList_ItemClick">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                        <Setter Property="Margin" Value="0,2" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
                     <DataTemplate>
                         <controls:NoteCard Note="{Binding}" />
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                </ListView.ItemTemplate>
+            </ListView>
 
             <Button x:Name="LoadMoreNotesButton"
                     Content="Load more notes"

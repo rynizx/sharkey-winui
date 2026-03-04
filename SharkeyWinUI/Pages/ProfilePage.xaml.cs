@@ -273,6 +273,12 @@ public sealed partial class ProfilePage : Page
     private void LoadMoreNotesButton_Click(object sender, RoutedEventArgs e)
         => _ = LoadNotesAsync(_cts.Token);
 
+    private void NotesList_ItemClick(object sender, ItemClickEventArgs e)
+    {
+        if (e.ClickedItem is Note note)
+            Frame.Navigate(typeof(NoteDetailPage), note.Id);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void SetLoading(bool loading)
