@@ -31,7 +31,7 @@ public sealed partial class MainWindow : Window
 
     private async void NavView_Loaded(object sender, RoutedEventArgs e)
     {
-        NavView.IsEnabled        = false;
+        NavView.IsPaneVisible    = false;
         ComposeButton.Visibility = Visibility.Collapsed;
 
         if (!App.AuthService.HasSavedSession)
@@ -71,7 +71,7 @@ public sealed partial class MainWindow : Window
 
     private void ShowAuthenticatedUI()
     {
-        NavView.IsEnabled = true;
+        NavView.IsPaneVisible = true;
         ComposeButton.Visibility = Visibility.Visible;
         NavView.SelectedItem = HomeItem;
         Navigate("home");

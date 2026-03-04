@@ -24,6 +24,7 @@ public sealed partial class LoginPage : Page
     public LoginPage()
     {
         InitializeComponent();
+        Loaded += (_, _) => ServerBox.Focus(FocusState.Programmatic);
     }
 
     // ── MiAuth flow ───────────────────────────────────────────────────────────
