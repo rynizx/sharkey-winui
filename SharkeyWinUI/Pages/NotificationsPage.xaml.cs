@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -123,24 +124,44 @@ public sealed partial class NotificationsPage : Page
 
     private void NotifList_ItemClick(object sender, ItemClickEventArgs e)
     {
-        if (e.ClickedItem is not Notification notif) return;
+        if (e.ClickedItem is not Notification notif)
+        {
+            Debug.WriteLine("NotificationsPage: ItemClick with null or invalid notification");
+            return;
+        }
+
         try
         {
             if (notif.Note != null)
             {
                 // Note-based notifications (mention, reply, renote, reaction, etc.)
-                Frame.Navigate(typeof(NoteDetailPage), notif.Note.Id);
+                Debug.WriteLine($"NotificationsPage: Navigating to note detail: {notif.Note.Id}");
+                if (!Frame.Navigate(typeof(NoteDetailPage), notif.Note.Id))
+                {
+                    Debug.WriteLine($"NotificationsPage: Navigation to NoteDetailPage failed");
+                    ShowError("Could not open note details");
+                }
             }
             else if (notif.User != null)
             {
                 // User-based notifications with no note (follow, follow request, etc.)
-                Frame.Navigate(typeof(ProfilePage), notif.User.Id);
+                Debug.WriteLine($"NotificationsPage: Navigating to profile: {notif.User.Id}");
+                if (!Frame.Navigate(typeof(ProfilePage), notif.User.Id))
+                {
+                    Debug.WriteLine($"NotificationsPage: Navigation to ProfilePage failed");
+                    ShowError("Could not open user profile");
+                }
+            }
+            else
+            {
+                Debug.WriteLine($"NotificationsPage: Notification has no note or user (type: {notif.Type})");
             }
             // Notifications with neither note nor user (achievements, exports) — no navigation
         }
         catch (Exception ex)
         {
-            ShowError(ex.Message);
+            Debug.WriteLine($"NotificationsPage: Navigation error: {ex.Message}\n{ex.StackTrace}");
+            ShowError($"Navigation failed: {ex.Message}");
         }
     }
 

@@ -8,6 +8,7 @@ using SharkeyWinUI.Helpers;
 using SharkeyWinUI.Models;
 using SharkeyWinUI.Pages;
 using SharkeyWinUI.Services;
+using System.Diagnostics;
 
 namespace SharkeyWinUI.Controls;
 
@@ -26,7 +27,16 @@ public sealed partial class NoteCard : UserControl
     }
 
     private static void OnNoteChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        => ((NoteCard)d).Populate(e.NewValue as Note);
+    {
+        try
+        {
+            ((NoteCard)d).Populate(e.NewValue as Note);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NoteCard: Error populating note: {ex.Message}");
+        }
+    }
 
     // ── Events ────────────────────────────────────────────────────────────────
 
@@ -41,11 +51,15 @@ public sealed partial class NoteCard : UserControl
     // false on every Populate call.  The Favourite button toggles it optimistically.
     private bool _isFavourited;
 
+    // Track dynamically created event handlers for proper cleanup
+    private readonly List<(Button button, RoutedEventHandler handler)> _dynamicHandlers = new();
+
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public NoteCard()
     {
         InitializeComponent();
+        Unloaded += NoteCard_Unloaded;
     }
 
     // ── Population ────────────────────────────────────────────────────────────
@@ -53,6 +67,9 @@ public sealed partial class NoteCard : UserControl
     private void Populate(Note? note)
     {
         if (note == null) return;
+
+        // Clean up any previous dynamic handlers before populating new content
+        CleanupDynamicHandlers();
 
         // If this is a pure renote, show the renote header and display the target
         Note displayNote = note;
@@ -63,8 +80,8 @@ public sealed partial class NoteCard : UserControl
                     RenoteByText,
                     $"{note.User?.EffectiveName ?? note.User?.Username} renoted",
                     note.User?.Emojis,
-                    Application.Current.Resources["CaptionTextBlockStyle"] as Microsoft.UI.Xaml.Style,
-                    (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]);
+                    GetStyleResource("CaptionTextBlockStyle"),
+                    GetBrushResource("TextFillColorSecondaryBrush"));
             displayNote = note.Renote;
         }
         else
@@ -75,8 +92,21 @@ public sealed partial class NoteCard : UserControl
         // Avatar
         if (!string.IsNullOrEmpty(displayNote.User?.AvatarUrl))
         {
-            try { AvatarBrush.ImageSource = new BitmapImage(new Uri(displayNote.User.AvatarUrl)); }
-            catch { /* leave blank */ }
+            try
+            {
+                if (Uri.TryCreate(displayNote.User.AvatarUrl, UriKind.Absolute, out var avatarUri))
+                {
+                    AvatarBrush.ImageSource = new BitmapImage(avatarUri);
+                }
+                else
+                {
+                    Debug.WriteLine($"NoteCard: Invalid avatar URL: {displayNote.User.AvatarUrl}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"NoteCard: Failed to load avatar: {ex.Message}");
+            }
         }
 
         // User names
@@ -84,7 +114,7 @@ public sealed partial class NoteCard : UserControl
             DisplayNameText,
             displayNote.User?.EffectiveName ?? displayNote.User?.Username ?? "Unknown",
             displayNote.User?.Emojis,
-            Application.Current.Resources["BodyStrongTextBlockStyle"] as Microsoft.UI.Xaml.Style);
+            GetStyleResource("BodyStrongTextBlockStyle"));
         UsernameText.Text = displayNote.User?.FullUsername ?? string.Empty;
 
         // Remote instance badge
@@ -168,10 +198,25 @@ public sealed partial class NoteCard : UserControl
             {
                 Stretch = Microsoft.UI.Xaml.Media.Stretch.UniformToFill,
             };
-            if (!string.IsNullOrEmpty(file.ThumbnailUrl ?? file.Url))
+
+            var imageUrl = file.ThumbnailUrl ?? file.Url;
+            if (!string.IsNullOrEmpty(imageUrl))
             {
-                try { img.Source = new BitmapImage(new Uri(file.ThumbnailUrl ?? file.Url!)); }
-                catch { /* skip */ }
+                try
+                {
+                    if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var imageUri))
+                    {
+                        img.Source = new BitmapImage(imageUri);
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"NoteCard: Invalid media URL: {imageUrl}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"NoteCard: Failed to load media file: {ex.Message}");
+                }
             }
 
             // Wrap each image in a border for rounded corners
@@ -195,14 +240,9 @@ public sealed partial class NoteCard : UserControl
         // If any file is sensitive, add a full-grid overlay that can be dismissed
         if (hasSensitive)
         {
-            var overlayBackground = Application.Current.Resources["LayerFillColorDefaultBrush"]
-                as Microsoft.UI.Xaml.Media.Brush;
-            if (overlayBackground is null)
-            {
-                // Fallback to a semi-transparent black brush to ensure the overlay obscures media
-                overlayBackground = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                    Windows.UI.Color.FromArgb(0x99, 0x00, 0x00, 0x00));
-            }
+            var overlayBackground = GetBrushResource(
+                "LayerFillColorDefaultBrush",
+                new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0x99, 0x00, 0x00, 0x00)));
 
             var overlay = new Border
             {
@@ -223,13 +263,13 @@ public sealed partial class NoteCard : UserControl
                         new TextBlock
                         {
                             Text = "Sensitive media",
-                            Style = Application.Current.Resources["CaptionTextBlockStyle"] as Style,
+                            Style = GetStyleResource("CaptionTextBlockStyle"),
                         },
                         new TextBlock
                         {
                             Text = "Click to show",
-                            Style = Application.Current.Resources["CaptionTextBlockStyle"] as Style,
-                            Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                            Style = GetStyleResource("CaptionTextBlockStyle"),
+                            Foreground = GetBrushResource("TextFillColorSecondaryBrush"),
                         },
                     },
                 },
@@ -245,8 +285,21 @@ public sealed partial class NoteCard : UserControl
         }
     }
 
+    /// <summary>
+    /// Cleans up dynamically created event handlers to prevent memory leaks.
+    /// </summary>
+    private void CleanupDynamicHandlers()
+    {
+        foreach (var (button, handler) in _dynamicHandlers)
+        {
+            button.Click -= handler;
+        }
+        _dynamicHandlers.Clear();
+    }
+
     private void PopulatePoll(Note note)
     {
+        CleanupDynamicHandlers();
         PollPanel.Children.Clear();
         if (note.Poll == null)
         {
@@ -285,7 +338,7 @@ public sealed partial class NoteCard : UserControl
             {
                 Text = $"{choice.Text}  {choice.Votes}",
                 VerticalAlignment = VerticalAlignment.Center,
-                Style = Application.Current.Resources["CaptionTextBlockStyle"] as Style,
+                Style = GetStyleResource("CaptionTextBlockStyle"),
             };
 
             Grid.SetColumn(voted, 0);
@@ -306,7 +359,9 @@ public sealed partial class NoteCard : UserControl
                     Padding = new Thickness(0),
                     Tag = choiceIndex,
                 };
-                btn.Click += PollChoiceButton_Click;
+                RoutedEventHandler handler = PollChoiceButton_Click;
+                btn.Click += handler;
+                _dynamicHandlers.Add((btn, handler));
                 PollPanel.Children.Add(btn);
             }
             else
@@ -325,8 +380,8 @@ public sealed partial class NoteCard : UserControl
         PollPanel.Children.Add(new TextBlock
         {
             Text = footerText,
-            Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
-            Style = Application.Current.Resources["CaptionTextBlockStyle"] as Style,
+            Foreground = GetBrushResource("TextFillColorSecondaryBrush"),
+            Style = GetStyleResource("CaptionTextBlockStyle"),
             Margin = new Thickness(0, 4, 0, 0),
         });
     }
@@ -335,9 +390,11 @@ public sealed partial class NoteCard : UserControl
     {
         if (Note == null || sender is not Button btn || btn.Tag is not int choiceIndex) return;
         var displayNote = GetDisplayNote();
+        if (displayNote == null) return;
 
         // Disable all poll choice buttons to prevent double-taps while the request is in-flight.
-        foreach (var b in PollPanel.Children.OfType<Button>()) b.IsEnabled = false;
+        var pollButtons = PollPanel.Children.OfType<Button>().ToList();
+        foreach (var b in pollButtons) b.IsEnabled = false;
 
         try
         {
@@ -348,30 +405,29 @@ public sealed partial class NoteCard : UserControl
         }
         catch (MisskeyApiException ex)
         {
+            Debug.WriteLine($"NoteCard: Poll vote failed with API error: {ex.ResponseBody}");
             var dlg = new ContentDialog
             {
                 Title = "Could not vote",
                 Content = $"The server returned an error: {ex.ResponseBody}",
                 CloseButtonText = "OK",
-                XamlRoot = XamlRoot,
             };
-            await dlg.ShowAsync();
+            await ShowDialogAsync(dlg);
         }
         catch (Exception ex)
         {
+            Debug.WriteLine($"NoteCard: Poll vote failed: {ex.Message}");
             var dlg = new ContentDialog
             {
                 Title = "Could not vote",
                 Content = ex.Message,
                 CloseButtonText = "OK",
-                XamlRoot = XamlRoot,
             };
-            await dlg.ShowAsync();
+            await ShowDialogAsync(dlg);
         }
         finally
         {
-            // Re-enable whichever buttons are currently in PollPanel (original ones on error,
-            // newly-populated ones on success — already enabled, so this is a safe no-op).
+            // Re-enable current poll buttons (may be different if PopulatePoll was called)
             foreach (var b in PollPanel.Children.OfType<Button>()) b.IsEnabled = true;
         }
     }
@@ -401,13 +457,20 @@ public sealed partial class NoteCard : UserControl
                 Tag = kv.Key,
             };
             if (note.MyReaction == kv.Key)
-                btn.Style = Application.Current.Resources["AccentButtonStyle"] as Style;
-            btn.Click += ReactionButton_Click;
+                btn.Style = GetStyleResource("AccentButtonStyle");
+            RoutedEventHandler handler = ReactionButton_Click;
+            btn.Click += handler;
+            _dynamicHandlers.Add((btn, handler));
             ReactionsPanel.Items.Add(btn);
         }
     }
 
     // ── Event handlers ────────────────────────────────────────────────────────
+
+    private void NoteCard_Unloaded(object sender, RoutedEventArgs e)
+    {
+        CleanupDynamicHandlers();
+    }
 
     private void CwToggle_Checked(object sender, RoutedEventArgs e)
     {
@@ -425,28 +488,49 @@ public sealed partial class NoteCard : UserControl
     {
         if (Note == null) return;
         var displayNote = GetDisplayNote();
+        if (displayNote == null) return;
+
         ReplyRequested?.Invoke(displayNote);
-        FindParentFrame(this)?.Navigate(typeof(ComposePage), $"reply:{displayNote.Id}");
+        var frame = FindParentFrame(this);
+        if (frame != null)
+        {
+            frame.Navigate(typeof(ComposePage), $"reply:{displayNote.Id}");
+        }
+        else
+        {
+            Debug.WriteLine("NoteCard: Could not find parent Frame for navigation");
+        }
     }
 
     private void RenoteButton_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
         var displayNote = GetDisplayNote();
+        if (displayNote == null) return;
+
         RenoteRequested?.Invoke(displayNote);
-        FindParentFrame(this)?.Navigate(typeof(ComposePage), $"renote:{displayNote.Id}");
+        var frame = FindParentFrame(this);
+        if (frame != null)
+        {
+            frame.Navigate(typeof(ComposePage), $"renote:{displayNote.Id}");
+        }
+        else
+        {
+            Debug.WriteLine("NoteCard: Could not find parent Frame for navigation");
+        }
     }
 
     private async void ReactButton_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
         var displayNote = GetDisplayNote();
+        if (displayNote == null) return;
+
         // Simple picker: show common reactions in a content dialog
         var dlg = new ContentDialog
         {
             Title = "Choose a reaction",
             CloseButtonText = "Cancel",
-            XamlRoot = XamlRoot,
         };
         // WrapGrid without MaximumRowsOrColumns puts all items on one row;
         // use 5 columns so the 10 emoji buttons wrap into 2 tidy rows.
@@ -462,7 +546,7 @@ public sealed partial class NoteCard : UserControl
             panel.Children.Add(btn);
         }
         dlg.Content = panel;
-        await dlg.ShowAsync();
+        await ShowDialogAsync(dlg);
     }
 
     private async Task SendReactionAsync(string noteId, string reaction)
@@ -470,18 +554,26 @@ public sealed partial class NoteCard : UserControl
         try
         {
             // Check the displayed note's reaction, not the outer renote wrapper's
-            if (GetDisplayNote().MyReaction == reaction)
+            var displayNote = GetDisplayNote();
+            if (displayNote == null) return;
+
+            if (displayNote.MyReaction == reaction)
                 await App.ApiClient.RemoveReactionAsync(noteId);
             else
                 await App.ApiClient.AddReactionAsync(noteId, reaction);
         }
-        catch { /* show error in production */ }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NoteCard: Failed to send reaction: {ex.Message}");
+        }
     }
 
     private async void FavouriteButton_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
         var displayNote = GetDisplayNote();
+        if (displayNote == null) return;
+
         try
         {
             if (_isFavourited)
@@ -497,33 +589,64 @@ public sealed partial class NoteCard : UserControl
                 FavouriteIcon.Glyph = "\uE735";
             }
         }
-        catch { /* silently ignore — server may reject duplicate/missing favourites */ }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NoteCard: Failed to toggle favourite: {ex.Message}");
+        }
     }
 
     private void CopyLinkItem_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
         var displayNote = GetDisplayNote();
-        var url = displayNote.Url ?? displayNote.Uri ?? $"{App.ApiClient.ServerUrl}/notes/{displayNote.Id}";
-        var dp = new DataPackage();
-        dp.SetText(url);
-        Clipboard.SetContent(dp);
+        if (displayNote == null) return;
+
+        try
+        {
+            var url = displayNote.Url ?? displayNote.Uri ?? $"{App.ApiClient.ServerUrl}/notes/{displayNote.Id}";
+            var dp = new DataPackage();
+            dp.SetText(url);
+            Clipboard.SetContent(dp);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NoteCard: Failed to copy link: {ex.Message}");
+        }
     }
 
     private async void OpenInBrowserItem_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
         var displayNote = GetDisplayNote();
-        var url = displayNote.Url ?? displayNote.Uri ?? $"{App.ApiClient.ServerUrl}/notes/{displayNote.Id}";
-        await Launcher.LaunchUriAsync(new Uri(url));
+        if (displayNote == null) return;
+
+        try
+        {
+            var url = displayNote.Url ?? displayNote.Uri ?? $"{App.ApiClient.ServerUrl}/notes/{displayNote.Id}";
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                await Launcher.LaunchUriAsync(uri);
+            }
+            else
+            {
+                Debug.WriteLine($"NoteCard: Invalid URI for opening in browser: {url}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NoteCard: Failed to open in browser: {ex.Message}");
+        }
     }
 
     private async void MuteUserItem_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
         var displayNote = GetDisplayNote();
+        if (displayNote == null) return;
+
         var userId = displayNote.User?.Id;
         if (userId == null) return;
+
         var dlg = new ContentDialog
         {
             Title = "Mute user",
@@ -531,12 +654,18 @@ public sealed partial class NoteCard : UserControl
             PrimaryButtonText = "Mute",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot,
         };
-        if (await dlg.ShowAsync() == ContentDialogResult.Primary)
+
+        try
         {
-            try { await App.ApiClient.MuteUserAsync(userId); }
-            catch { /* surface error */ }
+            if (await ShowDialogAsync(dlg) == ContentDialogResult.Primary)
+            {
+                await App.ApiClient.MuteUserAsync(userId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NoteCard: Failed to mute user: {ex.Message}");
         }
     }
 
@@ -544,8 +673,11 @@ public sealed partial class NoteCard : UserControl
     {
         if (Note == null) return;
         var displayNote = GetDisplayNote();
+        if (displayNote == null) return;
+
         var userId = displayNote.User?.Id;
         if (userId == null) return;
+
         var dlg = new ContentDialog
         {
             Title = "Block user",
@@ -553,18 +685,25 @@ public sealed partial class NoteCard : UserControl
             PrimaryButtonText = "Block",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot,
         };
-        if (await dlg.ShowAsync() == ContentDialogResult.Primary)
+
+        try
         {
-            try { await App.ApiClient.BlockUserAsync(userId); }
-            catch { /* surface error */ }
+            if (await ShowDialogAsync(dlg) == ContentDialogResult.Primary)
+            {
+                await App.ApiClient.BlockUserAsync(userId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NoteCard: Failed to block user: {ex.Message}");
         }
     }
 
     private async void DeleteNoteItem_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
+
         var dlg = new ContentDialog
         {
             Title = "Delete note",
@@ -572,29 +711,100 @@ public sealed partial class NoteCard : UserControl
             PrimaryButtonText = "Delete",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot,
         };
-        if (await dlg.ShowAsync() == ContentDialogResult.Primary)
+
+        try
         {
-            try { await App.ApiClient.DeleteNoteAsync(Note.Id); }
-            catch { /* surface error */ }
+            if (await ShowDialogAsync(dlg) == ContentDialogResult.Primary)
+            {
+                await App.ApiClient.DeleteNoteAsync(Note.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NoteCard: Failed to delete note: {ex.Message}");
         }
     }
 
     private void ReactionButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button btn && btn.Tag is string reaction && Note != null)
-            _ = SendReactionAsync(GetDisplayNote().Id, reaction);
+        {
+            var displayNote = GetDisplayNote();
+            if (displayNote != null)
+            {
+                _ = SendReactionAsync(displayNote.Id, reaction);
+            }
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>
+    /// Safely retrieves a style resource with fallback.
+    /// </summary>
+    private static Style? GetStyleResource(string key)
+    {
+        if (Application.Current.Resources.TryGetValue(key, out var resource) && resource is Style style)
+            return style;
+        Debug.WriteLine($"NoteCard: Style resource '{key}' not found");
+        return null;
+    }
+
+    /// <summary>
+    /// Safely retrieves a brush resource with fallback to a default.
+    /// </summary>
+    private static Microsoft.UI.Xaml.Media.Brush GetBrushResource(string key, Microsoft.UI.Xaml.Media.Brush? fallback = null)
+    {
+        if (Application.Current.Resources.TryGetValue(key, out var resource) && resource is Microsoft.UI.Xaml.Media.Brush brush)
+            return brush;
+        Debug.WriteLine($"NoteCard: Brush resource '{key}' not found, using fallback");
+        return fallback ?? new Microsoft.UI.Xaml.Media.SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x80, 0x80, 0x80));
+    }
+
+    /// <summary>
+    /// Safely shows a ContentDialog only if XamlRoot is available and control is loaded.
+    /// Returns true if dialog was shown, false otherwise.
+    /// </summary>
+    private async Task<ContentDialogResult> ShowDialogAsync(ContentDialog dialog)
+    {
+        // Wait a bit for XamlRoot to be available if control was just created
+        for (int i = 0; i < 10 && XamlRoot == null; i++)
+        {
+            await Task.Delay(50);
+        }
+
+        if (XamlRoot == null)
+        {
+            Debug.WriteLine("NoteCard: Cannot show dialog - XamlRoot is null");
+            return ContentDialogResult.None;
+        }
+
+        dialog.XamlRoot = XamlRoot;
+        try
+        {
+            return await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"NoteCard: Failed to show dialog: {ex.Message}");
+            return ContentDialogResult.None;
+        }
+    }
+
+    /// <summary>
     /// Returns the note to display — the inner note when this is a pure renote,
     /// or the note itself otherwise.
     /// </summary>
-    private Note GetDisplayNote() =>
-        Note != null && Note.IsPureRenote && Note.Renote != null ? Note.Renote : Note!;
+    private Note? GetDisplayNote()
+    {
+        if (Note == null)
+        {
+            Debug.WriteLine("NoteCard: GetDisplayNote called with null Note");
+            return null;
+        }
+        return Note.IsPureRenote && Note.Renote != null ? Note.Renote : Note;
+    }
 
     private static string RelativeTime(DateTimeOffset dt)
     {

@@ -92,7 +92,10 @@
                     <FontIcon Glyph="&#xE7BA;" FontSize="14"
                               Foreground="{ThemeResource SystemFillColorCautionBrush}" />
                     <TextBlock x:Name="CwText"
-                               Style="{StaticResource BodyStrongTextBlockStyle}" />
+                               Style="{StaticResource BodyStrongTextBlockStyle}"
+                               TextWrapping="Wrap"
+                               TextTrimming="CharacterEllipsis"
+                               MaxLines="2" />
                 </StackPanel>
                 <ToggleButton x:Name="CwToggle"
                               Content="Show content"
@@ -141,9 +144,10 @@
                 <Button x:Name="ReplyButton" Click="ReplyButton_Click"
                         Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
                         Padding="8,6"
-                        ToolTipService.ToolTip="Reply">
+                        ToolTipService.ToolTip="Reply"
+                        AutomationProperties.Name="Reply">
                     <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE97A;" FontSize="14" />
+                        <FontIcon Glyph="&#xE97A;" FontSize="14" AutomationProperties.Name="Reply icon" />
                         <TextBlock x:Name="RepliesCountText" Text="0"
                                    Style="{StaticResource CaptionTextBlockStyle}"
                                    VerticalAlignment="Center" />
@@ -153,9 +157,10 @@
                 <Button x:Name="RenoteButton" Click="RenoteButton_Click"
                         Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
                         Padding="8,6"
-                        ToolTipService.ToolTip="Renote">
+                        ToolTipService.ToolTip="Renote"
+                        AutomationProperties.Name="Renote">
                     <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE8EB;" FontSize="14" />
+                        <FontIcon Glyph="&#xE8EB;" FontSize="14" AutomationProperties.Name="Renote icon" />
                         <TextBlock x:Name="RenoteCountText" Text="0"
                                    Style="{StaticResource CaptionTextBlockStyle}"
                                    VerticalAlignment="Center" />
@@ -165,22 +170,25 @@
                 <Button x:Name="ReactButton" Click="ReactButton_Click"
                         Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
                         Padding="8,6"
-                        ToolTipService.ToolTip="React">
-                    <FontIcon Glyph="&#xE76E;" FontSize="14" />
+                        ToolTipService.ToolTip="React"
+                        AutomationProperties.Name="Add reaction">
+                    <FontIcon Glyph="&#xE76E;" FontSize="14" AutomationProperties.Name="Reaction icon" />
                 </Button>
 
                 <Button x:Name="FavouriteButton" Click="FavouriteButton_Click"
                         Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
                         Padding="8,6"
-                        ToolTipService.ToolTip="Favourite">
-                    <FontIcon x:Name="FavouriteIcon" Glyph="&#xE734;" FontSize="14" />
+                        ToolTipService.ToolTip="Favourite"
+                        AutomationProperties.Name="Add to favourites">
+                    <FontIcon x:Name="FavouriteIcon" Glyph="&#xE734;" FontSize="14" AutomationProperties.Name="Favourite icon" />
                 </Button>
 
                 <!-- More options -->
                 <Button Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
                         Padding="8,6"
-                        ToolTipService.ToolTip="More">
-                    <FontIcon Glyph="&#xE712;" FontSize="14" />
+                        ToolTipService.ToolTip="More"
+                        AutomationProperties.Name="More options">
+                    <FontIcon Glyph="&#xE712;" FontSize="14" AutomationProperties.Name="More icon" />
                     <Button.Flyout>
                         <MenuFlyout>
                             <MenuFlyoutItem x:Name="CopyLinkItem" Text="Copy link" Click="CopyLinkItem_Click">
