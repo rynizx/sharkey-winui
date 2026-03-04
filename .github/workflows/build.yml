@@ -155,28 +155,46 @@ jobs:
           Write-Output "::add-mask::$password"
           $securePassword = ConvertTo-SecureString -String $password -Force -AsPlainText
           $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=SharkeyWinUI" -CertStoreLocation "Cert:\CurrentUser\My"
-          Export-PfxCertificate -Cert $cert -FilePath "${{ github.workspace }}/artifacts/msix/SharkeyWinUI.pfx" -Password $securePassword | Out-Null
+          Export-PfxCertificate -Cert $cert -FilePath "${{ runner.temp }}/SharkeyWinUI.pfx" -Password $securePassword | Out-Null
           Export-Certificate -Cert $cert -FilePath "${{ github.workspace }}/artifacts/msix/SharkeyWinUI.cer" | Out-Null
-          "MSIX_CERT_PATH=${{ github.workspace }}/artifacts/msix/SharkeyWinUI.pfx" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "MSIX_CERT_THUMBPRINT=$($cert.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "MSIX_CERT_PATH=${{ runner.temp }}/SharkeyWinUI.pfx" | Out-File -FilePath $env:GITHUB_ENV -Append
           "MSIX_CERT_PASSWORD=$password" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $password = $null
 
       # Build a self-contained MSIX for side-loading
       - name: Publish (self-contained MSIX)
-        run: >
-          dotnet publish ${{ env.SOLUTION }}
-          --configuration ${{ env.CONFIGURATION }}
-          --runtime ${{ env.RUNTIME }}
-          --self-contained true
-          -p:Platform=x64
-          -p:PublishSingleFile=false
-          -p:WindowsPackageType=MSIX
-          -p:AppxPackageDir=${{ github.workspace }}/artifacts/msix/
-          -p:GenerateAppxPackageOnBuild=true
-          -p:AppxPackageSigningEnabled=true
-          -p:PackageCertificateKeyFile="${{ env.MSIX_CERT_PATH }}"
-          -p:PackageCertificatePassword="${{ env.MSIX_CERT_PASSWORD }}"
-          -p:Version=${{ steps.version.outputs.VERSION }}
-          --output ./artifacts/publish
+        shell: pwsh
+        run: |
+          dotnet publish ${{ env.SOLUTION }} `
+            --configuration ${{ env.CONFIGURATION }} `
+            --runtime ${{ env.RUNTIME }} `
+            --self-contained true `
+            -p:Platform=x64 `
+            -p:PublishSingleFile=false `
+            -p:WindowsPackageType=MSIX `
+            -p:AppxPackageDir=${{ github.workspace }}/artifacts/msix/ `
+            -p:GenerateAppxPackageOnBuild=true `
+            -p:AppxPackageSigningEnabled=true `
+            -p:PackageCertificateKeyFile="${{ env.MSIX_CERT_PATH }}" `
+            -p:PackageCertificatePassword=$env:MSIX_CERT_PASSWORD `
+            -p:Version=${{ steps.version.outputs.VERSION }} `
+            --output ./artifacts/publish
+
+      - name: Clean up signing certificate
+        if: always()
+        shell: pwsh
+        run: |
+          if ($env:MSIX_CERT_THUMBPRINT) {
+            try {
+              Remove-Item "Cert:\CurrentUser\My\$env:MSIX_CERT_THUMBPRINT" -ErrorAction Stop
+            } catch {
+              Write-Warning "Failed to remove signing cert $env:MSIX_CERT_THUMBPRINT: $($_.Exception.Message)"
+            }
+          }
+          if (Test-Path "${{ runner.temp }}/SharkeyWinUI.pfx") {
+            Remove-Item "${{ runner.temp }}/SharkeyWinUI.pfx" -Force
+          }
 
       - name: Upload MSIX artifact
         uses: actions/upload-artifact@v4
