@@ -217,6 +217,10 @@ public sealed partial class ProfilePage : Page
         {
             ShowError($"Could not follow: {ex.ResponseBody}");
         }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
+        }
         finally { FollowButton.IsEnabled = true; }
     }
 
@@ -233,6 +237,10 @@ public sealed partial class ProfilePage : Page
         catch (MisskeyApiException ex)
         {
             ShowError($"Could not unfollow: {ex.ResponseBody}");
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
         }
         finally { UnfollowButton.IsEnabled = true; }
     }
@@ -258,6 +266,7 @@ public sealed partial class ProfilePage : Page
                 UpdateFollowButtons();
             }
             catch (MisskeyApiException ex) { ShowError($"Could not unblock: {ex.ResponseBody}"); }
+            catch (Exception ex) { ShowError(ex.Message); }
         }
     }
 

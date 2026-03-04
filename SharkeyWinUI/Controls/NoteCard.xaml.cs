@@ -54,7 +54,9 @@ public sealed partial class NoteCard : UserControl
             EmojiTextHelper.SetTextWithEmojis(
                     RenoteByText,
                     $"{note.User?.EffectiveName ?? note.User?.Username} renoted",
-                    note.User?.Emojis);
+                    note.User?.Emojis,
+                    Application.Current.Resources["CaptionTextBlockStyle"] as Microsoft.UI.Xaml.Style,
+                    (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]);
             displayNote = note.Renote;
         }
         else
@@ -73,7 +75,8 @@ public sealed partial class NoteCard : UserControl
         EmojiTextHelper.SetTextWithEmojis(
             DisplayNameText,
             displayNote.User?.EffectiveName ?? displayNote.User?.Username ?? "Unknown",
-            displayNote.User?.Emojis);
+            displayNote.User?.Emojis,
+            Application.Current.Resources["BodyStrongTextBlockStyle"] as Microsoft.UI.Xaml.Style);
         UsernameText.Text = displayNote.User?.FullUsername ?? string.Empty;
 
         // Remote instance badge

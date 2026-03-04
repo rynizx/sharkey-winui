@@ -53,7 +53,12 @@ public sealed partial class AccountSettingsPage : Page
         if (me.Emojis.Count > 0 && nameForPreview.Contains(':'))
         {
             DisplayNamePreview.Visibility = Visibility.Visible;
-            EmojiTextHelper.SetTextWithEmojis(DisplayNamePreview, nameForPreview, me.Emojis);
+            EmojiTextHelper.SetTextWithEmojis(
+                DisplayNamePreview,
+                nameForPreview,
+                me.Emojis,
+                Application.Current.Resources["CaptionTextBlockStyle"] as Microsoft.UI.Xaml.Style,
+                (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]);
         }
         else
         {

@@ -25,11 +25,9 @@
                     <TextBox x:Name="DisplayNameBox" Header="Display name"
                              PlaceholderText="Your display name" MaxLength="50" />
                     <!-- Rendered preview of the display name including remote emoji images -->
-                    <TextBlock x:Name="DisplayNamePreview"
-                               Visibility="Collapsed"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               Style="{StaticResource CaptionTextBlockStyle}"
-                               TextTrimming="CharacterEllipsis" MaxLines="1" />
+                    <StackPanel x:Name="DisplayNamePreview"
+                               Orientation="Horizontal"
+                               Visibility="Collapsed" />
                     <TextBox x:Name="DescriptionBox" Header="Bio"
                              PlaceholderText="About yourself…"
                              AcceptsReturn="True" TextWrapping="Wrap"

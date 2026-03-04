@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Documents;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace SharkeyWinUI.Helpers;
@@ -9,28 +9,36 @@ namespace SharkeyWinUI.Helpers;
 /// <summary>
 /// Utility for rendering text that may contain custom emoji shortcodes
 /// (e.g. <c>:neodog_flag_gay:</c>) as a mix of inline text runs and
-/// inline images inside a <see cref="TextBlock"/>.
+/// inline images inside a horizontal <see cref="StackPanel"/>.
 /// </summary>
+/// <remarks>
+/// WinUI 3's <see cref="TextBlock"/> does not support <c>InlineUIContainer</c>,
+/// so a horizontal <see cref="StackPanel"/> is used as the container instead.
+/// </remarks>
 internal static class EmojiTextHelper
 {
     /// <summary>
-    /// Populates a <see cref="TextBlock"/> with text that may contain custom emoji
+    /// Populates a horizontal <see cref="StackPanel"/> with text that may contain custom emoji
     /// shortcodes. Shortcodes present in <paramref name="emojis"/> are replaced
-    /// with 20×20 inline images; everything else is rendered as plain text.
+    /// with 20×20 inline images; everything else is rendered as plain <see cref="TextBlock"/> segments.
     /// </summary>
-    /// <param name="textBlock">The target TextBlock to populate.</param>
+    /// <param name="container">Target horizontal StackPanel to populate.</param>
     /// <param name="text">The raw text, possibly containing <c>:shortcode:</c> patterns.</param>
     /// <param name="emojis">Map of shortcode → image URL. May be null or empty.</param>
+    /// <param name="textStyle">Optional style applied to each text-segment TextBlock.</param>
+    /// <param name="foreground">Optional foreground brush applied to each text-segment TextBlock.</param>
     public static void SetTextWithEmojis(
-        TextBlock textBlock,
+        StackPanel container,
         string text,
-        Dictionary<string, string>? emojis)
+        Dictionary<string, string>? emojis,
+        Style? textStyle = null,
+        Brush? foreground = null)
     {
-        textBlock.Inlines.Clear();
+        container.Children.Clear();
 
         if (emojis is null || emojis.Count == 0)
         {
-            textBlock.Text = text;
+            container.Children.Add(MakeTextBlock(text, textStyle, foreground));
             return;
         }
 
@@ -44,27 +52,35 @@ internal static class EmojiTextHelper
                 continue;
 
             if (match.Index > lastIndex)
-                textBlock.Inlines.Add(new Run { Text = text[lastIndex..match.Index] });
+                container.Children.Add(MakeTextBlock(text[lastIndex..match.Index], textStyle, foreground));
 
             var img = new Image
             {
                 Width = 20,
                 Height = 20,
                 VerticalAlignment = VerticalAlignment.Center,
-                Stretch = Microsoft.UI.Xaml.Media.Stretch.Uniform,
+                Stretch = Stretch.Uniform,
             };
             try { img.Source = new BitmapImage(new Uri(url)); }
             catch { /* skip broken URLs */ }
 
-            textBlock.Inlines.Add(new InlineUIContainer { Child = img });
+            container.Children.Add(img);
             lastIndex = match.Index + match.Length;
         }
 
         if (lastIndex < text.Length)
-            textBlock.Inlines.Add(new Run { Text = text[lastIndex..] });
+            container.Children.Add(MakeTextBlock(text[lastIndex..], textStyle, foreground));
 
-        // No shortcodes were resolved — fall back to plain text assignment
-        if (textBlock.Inlines.Count == 0)
-            textBlock.Text = text;
+        // No shortcodes were resolved — add the full text as a single block
+        if (container.Children.Count == 0)
+            container.Children.Add(MakeTextBlock(text, textStyle, foreground));
+    }
+
+    private static TextBlock MakeTextBlock(string text, Style? style, Brush? foreground)
+    {
+        var tb = new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center };
+        if (style != null) tb.Style = style;
+        if (foreground != null) tb.Foreground = foreground;
+        return tb;
     }
 }

@@ -137,12 +137,19 @@ public sealed partial class ComposePage : Page
             return;
         }
 
-        // Show a drive file picker dialog
-        var dlg = new DrivePickerDialog { XamlRoot = XamlRoot };
-        if (await dlg.ShowAsync() == ContentDialogResult.Primary && dlg.SelectedFile != null)
+        try
         {
-            if (_attachedFiles.All(f => f.Id != dlg.SelectedFile.Id))
-                _attachedFiles.Add(dlg.SelectedFile);
+            // Show a drive file picker dialog
+            var dlg = new DrivePickerDialog { XamlRoot = XamlRoot };
+            if (await dlg.ShowAsync() == ContentDialogResult.Primary && dlg.SelectedFile != null)
+            {
+                if (_attachedFiles.All(f => f.Id != dlg.SelectedFile.Id))
+                    _attachedFiles.Add(dlg.SelectedFile);
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message);
         }
     }
 

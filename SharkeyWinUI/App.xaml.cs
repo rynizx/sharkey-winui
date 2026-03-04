@@ -18,6 +18,7 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
+        UnhandledException += OnUnhandledException;
         // NOTE: Do NOT auto-restore the session here.
         // MainWindow.NavView_Loaded decides whether to show the Hello lock
         // page, silently restore, or go to login — after the window is ready.
@@ -27,5 +28,13 @@ public partial class App : Application
     {
         MainWindow = new MainWindow();
         MainWindow.Activate();
+    }
+
+    private static void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+    {
+        // Mark as handled to prevent the process from terminating.
+        // The exception originated from an async void event handler without a catch-all.
+        e.Handled = true;
+        System.Diagnostics.Debug.WriteLine($"[UnhandledException] {e.Exception}");
     }
 }

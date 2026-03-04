@@ -32,9 +32,9 @@
                         Visibility="Collapsed" Margin="0,0,0,8">
                 <FontIcon Glyph="&#xE8EB;" FontSize="12"
                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <TextBlock x:Name="RenoteByText"
-                           Style="{StaticResource CaptionTextBlockStyle}"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <StackPanel x:Name="RenoteByText"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center" />
             </StackPanel>
 
             <!-- User row -->
@@ -57,10 +57,9 @@
                 <!-- Name + handle + instance badge -->
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
                     <StackPanel Orientation="Horizontal" Spacing="6">
-                        <TextBlock x:Name="DisplayNameText"
-                                   TextTrimming="CharacterEllipsis"
-                                   MaxLines="1"
-                                   Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <StackPanel x:Name="DisplayNameText"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center" />
                         <!-- Federated instance badge (inline) -->
                         <Border x:Name="InstanceBadge"
                                 VerticalAlignment="Center"
