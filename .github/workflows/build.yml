@@ -151,16 +151,9 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path "${{ github.workspace }}/artifacts/msix" -Force | Out-Null
-          $password = [guid]::NewGuid().ToString("N")
-          Write-Output "::add-mask::$password"
-          $securePassword = ConvertTo-SecureString -String $password -Force -AsPlainText
           $cert = New-SelfSignedCertificate -Type CodeSigningCert -Subject "CN=SharkeyWinUI" -CertStoreLocation "Cert:\CurrentUser\My"
-          Export-PfxCertificate -Cert $cert -FilePath "${{ runner.temp }}/SharkeyWinUI.pfx" -Password $securePassword | Out-Null
           Export-Certificate -Cert $cert -FilePath "${{ github.workspace }}/artifacts/msix/SharkeyWinUI.cer" | Out-Null
           "MSIX_CERT_THUMBPRINT=$($cert.Thumbprint)" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "MSIX_CERT_PATH=${{ runner.temp }}/SharkeyWinUI.pfx" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "MSIX_CERT_PASSWORD=$password" | Out-File -FilePath $env:GITHUB_ENV -Append
-          $password = $null
 
       # Build a self-contained MSIX for side-loading
       - name: Publish (self-contained MSIX)
@@ -176,8 +169,7 @@ jobs:
             -p:AppxPackageDir=${{ github.workspace }}/artifacts/msix/ `
             -p:GenerateAppxPackageOnBuild=true `
             -p:AppxPackageSigningEnabled=true `
-            -p:PackageCertificateKeyFile="${{ env.MSIX_CERT_PATH }}" `
-            -p:PackageCertificatePassword=$env:MSIX_CERT_PASSWORD `
+            -p:PackageCertificateThumbprint=$env:MSIX_CERT_THUMBPRINT `
             -p:Version=${{ steps.version.outputs.VERSION }} `
             --output ./artifacts/publish
 
@@ -191,9 +183,6 @@ jobs:
             } catch {
               Write-Warning "Failed to remove signing cert $env:MSIX_CERT_THUMBPRINT: $($_.Exception.Message)"
             }
-          }
-          if (Test-Path "${{ runner.temp }}/SharkeyWinUI.pfx") {
-            Remove-Item "${{ runner.temp }}/SharkeyWinUI.pfx" -Force
           }
 
       - name: Upload MSIX artifact
