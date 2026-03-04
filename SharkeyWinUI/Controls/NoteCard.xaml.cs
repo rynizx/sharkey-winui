@@ -33,6 +33,14 @@ public sealed partial class NoteCard : UserControl
     public event Action<Note>? ReplyRequested;
     public event Action<Note>? RenoteRequested;
 
+    // ── State ─────────────────────────────────────────────────────────────────
+
+    // Tracks whether the displayed note has been favourited by the current user.
+    // Misskey/Sharkey note objects returned by timelines and search do NOT include
+    // an isFavorited field, so we maintain this as local UI state initialised to
+    // false on every Populate call.  The Favourite button toggles it optimistically.
+    private bool _isFavourited;
+
     // ── Constructor ───────────────────────────────────────────────────────────
 
     public NoteCard()
@@ -122,8 +130,13 @@ public sealed partial class NoteCard : UserControl
         RepliesCountText.Text = displayNote.RepliesCount.ToString();
         RenoteCountText.Text  = displayNote.RenoteCount.ToString();
 
-        // Favourite icon state (filled if note has a current reaction that's a like)
-        FavouriteIcon.Glyph = displayNote.MyReaction != null ? "\uE735" : "\uE734";
+        // Favourite icon state — reset local tracking so the icon reflects the
+        // current note, not a stale state from a previously displayed note.
+        // MyReaction tracks emoji reactions, NOT favourites; they are separate
+        // Misskey API concepts. We have no inline favourite-status field from the
+        // API so we initialise to false and let the user toggle from here.
+        _isFavourited = false;
+        FavouriteIcon.Glyph = "\uE734"; // unfilled star
     }
 
     private void PopulateMedia(Note note)
@@ -456,7 +469,8 @@ public sealed partial class NoteCard : UserControl
     {
         try
         {
-            if (Note?.MyReaction == reaction)
+            // Check the displayed note's reaction, not the outer renote wrapper's
+            if (GetDisplayNote().MyReaction == reaction)
                 await App.ApiClient.RemoveReactionAsync(noteId);
             else
                 await App.ApiClient.AddReactionAsync(noteId, reaction);
@@ -468,18 +482,18 @@ public sealed partial class NoteCard : UserControl
     {
         if (Note == null) return;
         var displayNote = GetDisplayNote();
-        // Toggle: filled star (\uE735) means already favourited
-        var alreadyFavourited = FavouriteIcon.Glyph == "\uE735";
         try
         {
-            if (alreadyFavourited)
+            if (_isFavourited)
             {
                 await App.ApiClient.UnfavouriteNoteAsync(displayNote.Id);
+                _isFavourited = false;
                 FavouriteIcon.Glyph = "\uE734";
             }
             else
             {
                 await App.ApiClient.FavouriteNoteAsync(displayNote.Id);
+                _isFavourited = true;
                 FavouriteIcon.Glyph = "\uE735";
             }
         }
