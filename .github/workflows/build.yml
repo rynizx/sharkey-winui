@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  SOLUTION: SharkeyWinUI/SharkeyWinUI.csproj
+  SOLUTION: SharkeyWinUI.sln
   CONFIGURATION: Release
   RUNTIME: win-x64
 
