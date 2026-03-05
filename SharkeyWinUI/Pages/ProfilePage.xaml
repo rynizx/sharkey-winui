@@ -143,7 +143,10 @@
             </StackPanel>
 
             <!-- Notes tab -->
-            <TextBlock Text="Notes" Padding="20,4,20,8"
+            <Rectangle Height="1" HorizontalAlignment="Stretch"
+                       Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                       Margin="20,4,20,0" />
+            <TextBlock Text="Notes" Padding="20,12,20,8"
                        Style="{StaticResource BodyStrongTextBlockStyle}" />
 
             <ListView x:Name="NotesList" Margin="8,0"

@@ -14,6 +14,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Header -->
@@ -27,22 +28,15 @@
                        VerticalAlignment="Center" />
             <Button Grid.Column="1"
                     x:Name="RefreshButton"
+                    Content="&#xE72C;"
+                    FontFamily="{StaticResource SymbolThemeFontFamily}"
                     ToolTipService.ToolTip="Refresh"
-                    AutomationProperties.Name="Refresh"
-                    Click="RefreshButton_Click">
-                <FontIcon Glyph="&#xE72C;" FontSize="16" />
-            </Button>
+                    Click="RefreshButton_Click" />
         </Grid>
 
         <!-- Error bar -->
         <InfoBar x:Name="ErrorBar" Grid.Row="1" IsOpen="False" IsClosable="True"
                  Severity="Error" />
-
-        <!-- Loading indicator — sits at the top of the list area as a thin overlay -->
-        <ProgressBar x:Name="LoadingBar" Grid.Row="2"
-                     IsIndeterminate="True"
-                     VerticalAlignment="Top"
-                     Visibility="Collapsed" />
 
         <!-- Notes list -->
         <ListView x:Name="NotesList"
@@ -51,11 +45,6 @@
                   SelectionMode="None"
                   IsItemClickEnabled="True"
                   ItemClick="NotesList_ItemClick">
-            <ListView.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <ItemsStackPanel ItemsUpdatingScrollMode="KeepScrollOffset" />
-                </ItemsPanelTemplate>
-            </ListView.ItemsPanel>
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -73,10 +62,11 @@
                         Content="Load more"
                         HorizontalAlignment="Center"
                         Margin="0,12,0,20"
-                        Visibility="Collapsed"
                         Click="LoadMoreButton_Click" />
             </ListView.Footer>
         </ListView>
 
+        <!-- Loading indicator -->
+        <ProgressBar x:Name="LoadingBar" Grid.Row="3" IsIndeterminate="True" Visibility="Collapsed" />
     </Grid>
 </Page>

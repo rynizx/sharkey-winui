@@ -25,7 +25,7 @@
                        Margin="12,14,12,6" />
 
             <!-- Replies list -->
-            <ListView x:Name="RepliesList" Margin="16,0,0,0"
+            <ListView x:Name="RepliesList" Margin="8,0,0,0"
                       SelectionMode="None"
                       IsItemClickEnabled="True"
                       ItemClick="RepliesList_ItemClick">

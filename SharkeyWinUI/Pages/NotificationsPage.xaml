@@ -15,7 +15,6 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Header -->
@@ -29,10 +28,12 @@
                        VerticalAlignment="Center" />
             <Button Grid.Column="1" Content="Mark all read"
                     Click="MarkAllReadButton_Click" />
-            <Button Grid.Column="2" Content="&#xE72C;"
-                    FontFamily="{StaticResource SymbolThemeFontFamily}"
+            <Button Grid.Column="2"
                     ToolTipService.ToolTip="Refresh"
-                    Click="RefreshButton_Click" />
+                    AutomationProperties.Name="Refresh"
+                    Click="RefreshButton_Click">
+                <FontIcon Glyph="&#xE72C;" FontSize="16" />
+            </Button>
         </Grid>
 
         <!-- Type filter chips -->
@@ -118,6 +119,9 @@
             </ListView.Footer>
         </ListView>
 
-        <ProgressBar x:Name="LoadingBar" Grid.Row="4" IsIndeterminate="True" Visibility="Collapsed" />
+        <ProgressBar x:Name="LoadingBar" Grid.Row="3"
+                     IsIndeterminate="True"
+                     VerticalAlignment="Top"
+                     Visibility="Collapsed" />
     </Grid>
 </Page>

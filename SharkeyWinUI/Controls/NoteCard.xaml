@@ -46,13 +46,19 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Avatar -->
-                <Grid Width="42" Height="42" Grid.Column="0">
+                <Button Width="42" Height="42" Grid.Column="0"
+                        Padding="0"
+                        CornerRadius="21"
+                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
+                        ToolTipService.ToolTip="View profile"
+                        AutomationProperties.Name="View profile"
+                        Click="AvatarButton_Click">
                     <Ellipse Width="42" Height="42">
                         <Ellipse.Fill>
                             <ImageBrush x:Name="AvatarBrush" Stretch="UniformToFill" />
                         </Ellipse.Fill>
                     </Ellipse>
-                </Grid>
+                </Button>
 
                 <!-- Name + handle + instance badge -->
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
@@ -133,13 +139,16 @@
             <ItemsControl x:Name="ReactionsPanel" Grid.Row="6" Margin="0,2,0,6">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <WrapGrid Orientation="Horizontal" />
+                        <ItemsWrapGrid Orientation="Horizontal" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
             </ItemsControl>
 
             <!-- Action bar -->
-            <StackPanel Grid.Row="7" Orientation="Horizontal" Spacing="2">
+            <StackPanel Grid.Row="7" Spacing="6">
+                <Rectangle Height="1" HorizontalAlignment="Stretch"
+                           Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                <StackPanel Orientation="Horizontal" Spacing="2">
 
                 <Button x:Name="ReplyButton" Click="ReplyButton_Click"
                         Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
@@ -212,6 +221,7 @@
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>
+            </StackPanel>
             </StackPanel>
 
         </Grid>

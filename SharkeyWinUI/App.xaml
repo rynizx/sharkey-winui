@@ -10,8 +10,14 @@
             </ResourceDictionary.MergedDictionaries>
 
             <!-- App accent color resources -->
-            <SolidColorBrush x:Key="AppAccentBrush" Color="#FF4081"/>
-            <SolidColorBrush x:Key="AppSecondaryBrush" Color="#7C4DFF"/>
+            <SolidColorBrush x:Key="AppAccentBrush"                        Color="#FF4081"/>
+            <SolidColorBrush x:Key="AppSecondaryBrush"                     Color="#7C4DFF"/>
+
+            <!-- AccentButton overrides — all accent-styled buttons use the app accent -->
+            <SolidColorBrush x:Key="AccentButtonBackground"              Color="#FF4081" />
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver"   Color="#E03870" />
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed"       Color="#CC305F" />
+            <SolidColorBrush x:Key="AccentButtonBackgroundDisabled"      Color="#884060" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

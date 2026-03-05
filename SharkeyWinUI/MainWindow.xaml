@@ -20,6 +20,8 @@
             Grid.Row="1"
             IsBackButtonVisible="Collapsed"
             IsPaneToggleButtonVisible="False"
+            IsPaneVisible="False"
+            IsPaneOpen="True"
             SelectionChanged="NavView_SelectionChanged"
             Loaded="NavView_Loaded"
             PaneDisplayMode="Left"
@@ -107,6 +109,7 @@
                     x:Name="ComposeButton"
                     Margin="12,8"
                     HorizontalAlignment="Stretch"
+                    Visibility="Collapsed"
                     Click="ComposeButton_Click"
                     Style="{StaticResource AccentButtonStyle}"
                     ToolTipService.ToolTip="New Note">

@@ -825,6 +825,14 @@ public sealed partial class NoteCard : UserControl
         }
     }
 
+    private void AvatarButton_Click(object sender, RoutedEventArgs e)
+    {
+        var userId = GetDisplayNote()?.User?.Id;
+        if (userId == null) return;
+
+        FindParentFrame(this)?.Navigate(typeof(ProfilePage), userId);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>
