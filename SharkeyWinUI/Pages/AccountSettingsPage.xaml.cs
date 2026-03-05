@@ -1,5 +1,7 @@
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using SharkeyWinUI.Helpers;
 using SharkeyWinUI.Models;
@@ -11,10 +13,12 @@ public sealed partial class AccountSettingsPage : Page
 {
     private User? _me;
     private CancellationTokenSource _cts = new();
+    private bool _suppressThemeChange;
 
     public AccountSettingsPage()
     {
         InitializeComponent();
+        PopulateAppearanceSection();
     }
 
     // OnNavigatedTo is defined in the Windows Hello section below
@@ -25,6 +29,85 @@ public sealed partial class AccountSettingsPage : Page
         _cts.Cancel();
         _cts.Dispose();
         _cts = new CancellationTokenSource();
+    }
+
+    // ── Appearance section ────────────────────────────────────────────────────
+
+    private void PopulateAppearanceSection()
+    {
+        // Theme combo
+        var savedTheme = ThemeService.GetSavedThemeValue();
+        _suppressThemeChange = true;
+        foreach (ComboBoxItem item in ThemeCombo.Items.OfType<ComboBoxItem>())
+        {
+            if ((string)item.Tag == savedTheme)
+            {
+                ThemeCombo.SelectedItem = item;
+                break;
+            }
+        }
+        _suppressThemeChange = false;
+
+        // Accent colour swatches
+        var savedAccent = ThemeService.GetSavedAccentHex();
+        foreach (var preset in ThemeService.Presets)
+        {
+            var isSelected = preset.Hex.Equals(savedAccent, StringComparison.OrdinalIgnoreCase);
+            var btn = new Button
+            {
+                Width = 40,
+                Height = 40,
+                Padding = new Thickness(0),
+                CornerRadius = new CornerRadius(20),
+                Background = new SolidColorBrush(preset.Color),
+                Tag = preset.Hex,
+                BorderThickness = isSelected ? new Thickness(3) : new Thickness(0),
+                BorderBrush = isSelected
+                    ? (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"]
+                    : new SolidColorBrush(Colors.Transparent),
+            };
+            ToolTipService.SetToolTip(btn, preset.Name);
+
+            if (isSelected)
+                btn.Content = new FontIcon
+                {
+                    Glyph = "\uE73E",
+                    FontSize = 16,
+                    Foreground = new SolidColorBrush(Colors.White),
+                };
+
+            btn.Click += AccentSwatch_Click;
+            AccentSwatchesPanel.Children.Add(btn);
+        }
+    }
+
+    private void ThemeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressThemeChange) return;
+        if (ThemeCombo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+            ThemeService.SaveAndApplyTheme(tag);
+    }
+
+    private void AccentSwatch_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button clicked || clicked.Tag is not string hex) return;
+
+        ThemeService.SaveAndApplyAccent(hex);
+
+        // Update visual selection state on all swatches
+        foreach (var child in AccentSwatchesPanel.Children.OfType<Button>())
+        {
+            var isSel = (string)child.Tag == hex;
+            child.BorderThickness = isSel ? new Thickness(3) : new Thickness(0);
+            child.BorderBrush = isSel
+                ? (Brush)Application.Current.Resources["TextFillColorPrimaryBrush"]
+                : new SolidColorBrush(Colors.Transparent);
+            child.Content = isSel
+                ? new FontIcon { Glyph = "\uE73E", FontSize = 16, Foreground = new SolidColorBrush(Colors.White) }
+                : null;
+        }
+
+        AccentRestartBar.IsOpen = true;
     }
 
     // ── Load current settings ─────────────────────────────────────────────────

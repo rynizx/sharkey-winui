@@ -26,8 +26,14 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Apply saved accent colour to resource dictionaries before any XAML loads.
+        ThemeService.ApplySavedAccent();
+
         MainWindow = new MainWindow();
         MainWindow.Activate();
+
+        // Theme must be applied after the window content exists.
+        ThemeService.ApplySavedTheme();
     }
 
     private static void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)

@@ -9,6 +9,39 @@
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>
 
+            <!-- ── System accent color overrides ──────────────────────── -->
+            <!-- Ensures every WinUI control (NavView indicator, ToggleSwitch,
+                 CheckBox, ProgressBar, Slider, etc.) uses the app accent
+                 instead of the OS-level Windows accent color. -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <Color x:Key="SystemAccentColor">#FF4081</Color>
+                    <Color x:Key="SystemAccentColorLight1">#FF6BA0</Color>
+                    <Color x:Key="SystemAccentColorLight2">#FF8BB5</Color>
+                    <Color x:Key="SystemAccentColorLight3">#FFC0D8</Color>
+                    <Color x:Key="SystemAccentColorDark1">#E03870</Color>
+                    <Color x:Key="SystemAccentColorDark2">#CC305F</Color>
+                    <Color x:Key="SystemAccentColorDark3">#A0284D</Color>
+                    <!-- Light theme: accent controls use Dark1 for contrast on light backgrounds -->
+                    <SolidColorBrush x:Key="AccentFillColorDefaultBrush"   Color="#E03870" />
+                    <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E6E03870" />
+                    <SolidColorBrush x:Key="AccentFillColorTertiaryBrush"  Color="#CCE03870" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <Color x:Key="SystemAccentColor">#FF4081</Color>
+                    <Color x:Key="SystemAccentColorLight1">#FF6BA0</Color>
+                    <Color x:Key="SystemAccentColorLight2">#FF8BB5</Color>
+                    <Color x:Key="SystemAccentColorLight3">#FFC0D8</Color>
+                    <Color x:Key="SystemAccentColorDark1">#E03870</Color>
+                    <Color x:Key="SystemAccentColorDark2">#CC305F</Color>
+                    <Color x:Key="SystemAccentColorDark3">#A0284D</Color>
+                    <!-- Dark theme: accent controls use Light2 for contrast on dark backgrounds -->
+                    <SolidColorBrush x:Key="AccentFillColorDefaultBrush"   Color="#FF8BB5" />
+                    <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E6FF6BA0" />
+                    <SolidColorBrush x:Key="AccentFillColorTertiaryBrush"  Color="#CCFF6BA0" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
             <!-- App accent color resources -->
             <SolidColorBrush x:Key="AppAccentBrush"                        Color="#FF4081"/>
             <SolidColorBrush x:Key="AppSecondaryBrush"                     Color="#7C4DFF"/>
