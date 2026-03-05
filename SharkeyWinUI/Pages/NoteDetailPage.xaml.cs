@@ -46,6 +46,7 @@ public sealed partial class NoteDetailPage : Page
     {
         SetLoading(true);
         ErrorBar.IsOpen = false;
+        ParentNoteSection.Visibility = Visibility.Collapsed;
         _replies.Clear();
         _repliesUntilId = null;
 
@@ -58,6 +59,11 @@ public sealed partial class NoteDetailPage : Page
 
             var note = await App.ApiClient.GetNoteAsync(_noteId!, ct);
             RootNoteCard.Note = note;
+
+            // Show the parent note as thread context when this note is a reply.
+            // For pure renotes, use the inner note's ReplyId so context is correct.
+            var displayNote = (note.IsPureRenote && note.Renote != null) ? note.Renote : note;
+            await LoadParentNoteAsync(displayNote, ct);
 
             await LoadRepliesAsync(ct);
         }
@@ -78,6 +84,30 @@ public sealed partial class NoteDetailPage : Page
         {
             SetLoading(false);
         }
+    }
+
+    private async Task LoadParentNoteAsync(Note note, CancellationToken ct)
+    {
+        if (note.ReplyId == null) return;
+
+        // Use the inline Reply object when the API returned it; otherwise fetch it.
+        Note? parent = note.Reply;
+        if (parent == null)
+        {
+            try
+            {
+                parent = await App.ApiClient.GetNoteAsync(note.ReplyId, ct);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch
+            {
+                // Thread context is best-effort — don't surface an error to the user.
+                return;
+            }
+        }
+
+        ParentNoteCard.Note = parent;
+        ParentNoteSection.Visibility = Visibility.Visible;
     }
 
     private async Task LoadRepliesAsync(CancellationToken ct)

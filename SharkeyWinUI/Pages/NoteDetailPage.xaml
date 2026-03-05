@@ -16,6 +16,23 @@
             <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Visibility="Collapsed" />
             <InfoBar x:Name="ErrorBar" IsOpen="False" IsClosable="True" Severity="Error" />
 
+            <!-- Original post context (visible when the root note is a reply) -->
+            <StackPanel x:Name="ParentNoteSection" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" Spacing="6" Margin="16,8,0,2">
+                    <FontIcon Glyph="&#xE97A;" FontSize="11"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="Original post"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+                <controls:NoteCard x:Name="ParentNoteCard" />
+                <!-- Thread connector line between parent and reply -->
+                <Grid Height="20" Margin="36,0,0,0" HorizontalAlignment="Left" Width="2">
+                    <Rectangle Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                               HorizontalAlignment="Stretch" />
+                </Grid>
+            </StackPanel>
+
             <!-- Root note -->
             <controls:NoteCard x:Name="RootNoteCard" />
 

@@ -15,30 +15,18 @@
                  instead of the OS-level Windows accent color. -->
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
-                    <Color x:Key="SystemAccentColor">#FF4081</Color>
-                    <Color x:Key="SystemAccentColorLight1">#FF6BA0</Color>
-                    <Color x:Key="SystemAccentColorLight2">#FF8BB5</Color>
-                    <Color x:Key="SystemAccentColorLight3">#FFC0D8</Color>
-                    <Color x:Key="SystemAccentColorDark1">#E03870</Color>
-                    <Color x:Key="SystemAccentColorDark2">#CC305F</Color>
-                    <Color x:Key="SystemAccentColorDark3">#A0284D</Color>
-                    <!-- Light theme: accent controls use Dark1 for contrast on light backgrounds -->
+                    <!-- Light theme: accent controls use a darker shade for contrast on light backgrounds.
+                         Color (SystemAccentColor*) resources are set at runtime by ThemeService. -->
                     <SolidColorBrush x:Key="AccentFillColorDefaultBrush"   Color="#E03870" />
-                    <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E6E03870" />
-                    <SolidColorBrush x:Key="AccentFillColorTertiaryBrush"  Color="#CCE03870" />
+                    <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E0E03870" />
+                    <SolidColorBrush x:Key="AccentFillColorTertiaryBrush"  Color="#C0E03870" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
-                    <Color x:Key="SystemAccentColor">#FF4081</Color>
-                    <Color x:Key="SystemAccentColorLight1">#FF6BA0</Color>
-                    <Color x:Key="SystemAccentColorLight2">#FF8BB5</Color>
-                    <Color x:Key="SystemAccentColorLight3">#FFC0D8</Color>
-                    <Color x:Key="SystemAccentColorDark1">#E03870</Color>
-                    <Color x:Key="SystemAccentColorDark2">#CC305F</Color>
-                    <Color x:Key="SystemAccentColorDark3">#A0284D</Color>
-                    <!-- Dark theme: accent controls use Light2 for contrast on dark backgrounds -->
+                    <!-- Dark theme: accent controls use a lighter shade for contrast on dark backgrounds.
+                         Color (SystemAccentColor*) resources are set at runtime by ThemeService. -->
                     <SolidColorBrush x:Key="AccentFillColorDefaultBrush"   Color="#FF8BB5" />
-                    <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E6FF6BA0" />
-                    <SolidColorBrush x:Key="AccentFillColorTertiaryBrush"  Color="#CCFF6BA0" />
+                    <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E0FF6BA0" />
+                    <SolidColorBrush x:Key="AccentFillColorTertiaryBrush"  Color="#C0FF6BA0" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
