@@ -9,7 +9,7 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <ScrollViewer>
-        <StackPanel MaxWidth="640" HorizontalAlignment="Center" Padding="16" Spacing="12">
+        <StackPanel MaxWidth="680" HorizontalAlignment="Center" Padding="16" Spacing="12">
 
             <!-- Header -->
             <TextBlock x:Name="HeaderText" Text="New Note"
@@ -90,6 +90,8 @@
                                            TextTrimming="CharacterEllipsis" />
                                 <Button Grid.Column="1" Content="&#xE711;"
                                         FontFamily="{StaticResource SymbolThemeFontFamily}"
+                                    ToolTipService.ToolTip="Remove attached file"
+                                    AutomationProperties.Name="Remove attached file"
                                         Tag="{Binding Id}"
                                         Click="RemoveFileButton_Click" />
                             </Grid>

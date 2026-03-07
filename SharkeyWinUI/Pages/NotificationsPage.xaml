@@ -41,7 +41,7 @@
         <!-- Type filter chips -->
         <ScrollViewer Grid.Row="1" HorizontalScrollMode="Enabled"
                       VerticalScrollMode="Disabled" HorizontalScrollBarVisibility="Hidden">
-            <StackPanel x:Name="FilterChipsPanel" Orientation="Horizontal" Spacing="6" Padding="16,0,16,8">
+            <StackPanel x:Name="FilterChipsPanel" Orientation="Horizontal" Spacing="6" Padding="20,0,20,8">
                 <ToggleButton x:Name="FilterAll" Content="All" IsChecked="True"
                               Click="FilterChip_Click" Tag="" />
                 <ToggleButton Content="Follows"    Tag="follow"                Click="FilterChip_Click" />

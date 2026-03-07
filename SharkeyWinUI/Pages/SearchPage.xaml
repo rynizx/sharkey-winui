@@ -21,6 +21,7 @@
         <StackPanel Grid.Row="0" Padding="20,14" Spacing="10">
             <TextBlock Text="Search" Style="{StaticResource SubtitleTextBlockStyle}" />
             <AutoSuggestBox x:Name="SearchBox"
+                            AutomationProperties.Name="Search notes or users"
                             PlaceholderText="Search notes or users…"
                             QueryIcon="Find"
                             QuerySubmitted="SearchBox_QuerySubmitted" />
