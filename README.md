@@ -1,5 +1,7 @@
 # Sharkey WinUI
 
+### i should mention this is for a school project that required using AI to build an application. I did this - no, I won't be maintaining it since it's a bit of slopish
+
 A native Windows client for [Misskey](https://misskey-hub.net/) and [Sharkey](https://activitypub.software/ahrienby/Sharkey) — built with WinUI 3 and .NET 8.
 
 ![Build & Package](https://github.com/rynizx/sharkey-winui/actions/workflows/build.yml/badge.svg)
