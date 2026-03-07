@@ -48,6 +48,8 @@
         <ListView x:Name="NotesList"
                   Grid.Row="2"
                   Padding="8,0"
+                  MaxWidth="680"
+                  HorizontalAlignment="Center"
                   SelectionMode="None"
                   IsItemClickEnabled="True"
                   ItemClick="NotesList_ItemClick">
