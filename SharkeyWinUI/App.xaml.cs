@@ -24,6 +24,11 @@ public partial class App : Application
         // page, silently restore, or go to login — after the window is ready.
     }
 
+    private void InitializeComponent()
+    {
+        throw new NotImplementedException();
+    }
+
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         // Apply saved accent colour to resource dictionaries before any XAML loads.
