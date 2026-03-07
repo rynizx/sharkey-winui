@@ -136,11 +136,14 @@ public sealed partial class NoteDetailPage : Page
     private void OnNoteUpdated(NoteUpdatedEvent ev)
     {
         if (ev.Id != _noteId) return;
-        DispatcherQueue.TryEnqueue(() =>
+        if (!DispatcherQueue.TryEnqueue(() =>
         {
             // Reload the note to pick up new reaction counts
             _ = RefreshRootNoteAsync();
-        });
+        }))
+        {
+            System.Diagnostics.Debug.WriteLine("NoteDetailPage: Dispatcher unavailable, skipping note refresh.");
+        }
     }
 
     private async Task RefreshRootNoteAsync()

@@ -34,6 +34,9 @@ public sealed partial class AccountSettingsPage : Page
     // ── Sign out ──────────────────────────────────────────────────────────────
 
     private async void SignOutButton_Click(object sender, RoutedEventArgs e)
+        => await SignOutAsync();
+
+    private async Task SignOutAsync()
     {
         var dialog = new ContentDialog
         {

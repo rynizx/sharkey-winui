@@ -48,11 +48,12 @@ public sealed partial class TimelinePage : Page
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
+        // Unsubscribe before cancellation to avoid stream events racing against disposed state.
+        App.Streaming.NoteReceived -= OnStreamNote;
+        _ = UnsubscribeStreamAsync();
         _cts.Cancel();
         _cts.Dispose();
         _cts = new CancellationTokenSource();
-        // Unsubscribe this timeline channel from streaming
-        _ = UnsubscribeStreamAsync();
     }
 
     // ── Load / refresh ────────────────────────────────────────────────────────
@@ -134,7 +135,6 @@ public sealed partial class TimelinePage : Page
 
     private async Task UnsubscribeStreamAsync()
     {
-        App.Streaming.NoteReceived -= OnStreamNote;
         var channel = _kind switch
         {
             "home"   => "homeTimeline",
@@ -150,12 +150,15 @@ public sealed partial class TimelinePage : Page
 
     private void OnStreamNote(Note note)
     {
-        DispatcherQueue.TryEnqueue(() =>
+        if (!DispatcherQueue.TryEnqueue(() =>
         {
             // Prepend the new note to the top, de-duplicating by ID
             if (_notes.All(n => n.Id != note.Id))
                 _notes.Insert(0, note);
-        });
+        }))
+        {
+            System.Diagnostics.Debug.WriteLine("TimelinePage: Dispatcher unavailable, dropping streamed note update.");
+        }
     }
 
     // ── Event handlers ────────────────────────────────────────────────────────

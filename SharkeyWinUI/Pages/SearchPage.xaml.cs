@@ -16,6 +16,7 @@ public sealed partial class SearchPage : Page
     private int _usersOffset;
 
     private CancellationTokenSource _cts = new();
+    private readonly object _ctsLock = new();
 
     public SearchPage()
     {
@@ -27,9 +28,7 @@ public sealed partial class SearchPage : Page
     protected override void OnNavigatedFrom(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
-        _cts.Cancel();
-        _cts.Dispose();
-        _cts = new CancellationTokenSource();
+        ReplaceCancellationSource();
     }
 
     // ── Search entry ──────────────────────────────────────────────────────────
@@ -57,10 +56,7 @@ public sealed partial class SearchPage : Page
     {
         // Cancel any in-flight request and capture a reference to the new CTS.
         // We compare at the end so that only the latest call clears the loading state.
-        _cts.Cancel();
-        _cts.Dispose();
-        var cts = new CancellationTokenSource();
-        _cts = cts;
+        var cts = ReplaceCancellationSource();
         var ct = cts.Token;
 
         ErrorBar.IsOpen = false;
@@ -157,5 +153,21 @@ public sealed partial class SearchPage : Page
     {
         ErrorBar.Message = msg;
         ErrorBar.IsOpen  = true;
+    }
+
+    private CancellationTokenSource ReplaceCancellationSource()
+    {
+        CancellationTokenSource current;
+        CancellationTokenSource replacement = new();
+
+        lock (_ctsLock)
+        {
+            current = _cts;
+            _cts = replacement;
+        }
+
+        current.Cancel();
+        current.Dispose();
+        return replacement;
     }
 }

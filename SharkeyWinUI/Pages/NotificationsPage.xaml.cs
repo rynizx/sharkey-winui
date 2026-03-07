@@ -86,11 +86,14 @@ public sealed partial class NotificationsPage : Page
 
     private void OnStreamNotification(Notification notif)
     {
-        DispatcherQueue.TryEnqueue(() =>
+        if (!DispatcherQueue.TryEnqueue(() =>
         {
             if (_notifs.All(n => n.Id != notif.Id))
                 _notifs.Insert(0, notif);
-        });
+        }))
+        {
+            Debug.WriteLine("NotificationsPage: Dispatcher unavailable, dropping streamed notification update.");
+        }
     }
 
     // ── Event handlers ────────────────────────────────────────────────────────

@@ -119,7 +119,11 @@
 
             <!-- Actions -->
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                <Button x:Name="CancelButton" Content="Cancel" Click="CancelButton_Click" />
+                <Button x:Name="CancelButton"
+                    Content="Cancel"
+                    ToolTipService.ToolTip="Cancel editing"
+                    AutomationProperties.Name="Cancel editing"
+                    Click="CancelButton_Click" />
                 <Button x:Name="PostButton"
                         Content="Post"
                         Style="{StaticResource AccentButtonStyle}"

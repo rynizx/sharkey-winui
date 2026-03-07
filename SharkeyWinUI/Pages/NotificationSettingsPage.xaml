@@ -9,7 +9,7 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <ScrollViewer>
-        <StackPanel MaxWidth="640" HorizontalAlignment="Center" Padding="24,20,24,32" Spacing="4">
+        <StackPanel MaxWidth="680" HorizontalAlignment="Center" Padding="24,20,24,32" Spacing="4">
 
             <!-- ── Page header ────────────────────────────────────────────── -->
             <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,0,0,16">

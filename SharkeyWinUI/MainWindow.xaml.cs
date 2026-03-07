@@ -71,6 +71,7 @@ public sealed partial class MainWindow : Window
         // Window.SizeChanged which fires on every resize/DPI change instead.
         SizeChanged += (_, _) => SetTitleBarColumnWidths();
         Activated   += (_, _) => SetTitleBarColumnWidths();
+        Closed      += MainWindow_Closed;
     }
 
     // ── Title bar helpers ─────────────────────────────────────────────────────
@@ -235,6 +236,11 @@ public sealed partial class MainWindow : Window
         {
             // Streaming is best-effort — the app still works without it
         }
+    }
+
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        _streaming.Dispose();
     }
 }
 

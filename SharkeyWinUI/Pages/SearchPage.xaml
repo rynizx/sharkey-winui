@@ -18,7 +18,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header + search box -->
-        <StackPanel Grid.Row="0" Padding="16,12" Spacing="10">
+        <StackPanel Grid.Row="0" Padding="20,14" Spacing="10">
             <TextBlock Text="Search" Style="{StaticResource SubtitleTextBlockStyle}" />
             <AutoSuggestBox x:Name="SearchBox"
                             PlaceholderText="Search notes or users…"
@@ -35,6 +35,8 @@
             <PivotItem Header="Notes">
                 <ListView x:Name="NotesList"
                           Padding="8,0"
+                          MaxWidth="680"
+                          HorizontalAlignment="Center"
                           SelectionMode="None"
                           IsItemClickEnabled="True"
                           ItemClick="NotesList_ItemClick">
@@ -53,8 +55,9 @@
                     <ListView.Footer>
                         <Button x:Name="LoadMoreNotesButton"
                                 Content="Load more"
+                            AutomationProperties.Name="Load more note results"
                                 HorizontalAlignment="Center"
-                                Margin="0,8,0,16"
+                            Margin="0,12,0,20"
                                 Visibility="Collapsed"
                                 Click="LoadMoreNotesButton_Click" />
                     </ListView.Footer>
@@ -65,6 +68,8 @@
             <PivotItem Header="Users">
                 <ListView x:Name="UsersList"
                           Padding="8,0"
+                          MaxWidth="680"
+                          HorizontalAlignment="Center"
                           SelectionMode="None"
                           IsItemClickEnabled="True"
                           ItemClick="UsersList_ItemClick">
@@ -105,8 +110,9 @@
                     <ListView.Footer>
                         <Button x:Name="LoadMoreUsersButton"
                                 Content="Load more"
+                            AutomationProperties.Name="Load more user results"
                                 HorizontalAlignment="Center"
-                                Margin="0,8,0,16"
+                            Margin="0,12,0,20"
                                 Visibility="Collapsed"
                                 Click="LoadMoreUsersButton_Click" />
                     </ListView.Footer>

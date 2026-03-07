@@ -12,7 +12,7 @@
         <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
-                CornerRadius="12">
+            CornerRadius="8">
         <StackPanel Spacing="16" Padding="32">
 
             <!-- Logo / Title -->

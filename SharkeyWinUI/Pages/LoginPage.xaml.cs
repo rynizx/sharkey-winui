@@ -30,6 +30,9 @@ public sealed partial class LoginPage : Page
     // ── MiAuth flow ───────────────────────────────────────────────────────────
 
     private async void OpenMiAuthButton_Click(object sender, RoutedEventArgs e)
+        => await OpenMiAuthAsync();
+
+    private async Task OpenMiAuthAsync()
     {
         if (!TryGetServerUrl(out var serverUrl)) return;
 
@@ -57,6 +60,9 @@ public sealed partial class LoginPage : Page
     }
 
     private async void CheckMiAuthButton_Click(object sender, RoutedEventArgs e)
+        => await CheckMiAuthAsync();
+
+    private async Task CheckMiAuthAsync()
     {
         if (_miAuthCheckUrl == null) return;
         if (!TryGetServerUrl(out var serverUrl)) return;
@@ -86,6 +92,9 @@ public sealed partial class LoginPage : Page
     // ── Token flow ────────────────────────────────────────────────────────────
 
     private async void TokenLoginButton_Click(object sender, RoutedEventArgs e)
+        => await TokenLoginAsync();
+
+    private async Task TokenLoginAsync()
     {
         if (!TryGetServerUrl(out var serverUrl)) return;
 

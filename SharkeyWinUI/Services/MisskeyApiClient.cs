@@ -462,9 +462,12 @@ public class MisskeyApiClient
         if (comment != null) form.Add(new StringContent(comment), "comment");
         if (folderId != null) form.Add(new StringContent(folderId), "folderId");
 
-        var resp = await _http.PostAsync($"{ServerUrl}/api/drive/files/create", form, ct);
+        using var resp = await _http.PostAsync($"{ServerUrl}/api/drive/files/create", form, ct);
         resp.EnsureSuccessStatusCode();
-        return (await resp.Content.ReadFromJsonAsync<DriveFile>(JsonOpts, ct))!;
+        var file = await resp.Content.ReadFromJsonAsync<DriveFile>(JsonOpts, ct);
+        return file ?? throw new MisskeyApiException(
+            resp.StatusCode,
+            "Drive upload succeeded but the response body was empty or invalid JSON.");
     }
 
     // ── ActivityPub ───────────────────────────────────────────────────────────
@@ -524,7 +527,7 @@ public class MisskeyApiClient
     private async Task PostVoidAsync(string endpoint, Dictionary<string, object?> body, CancellationToken ct)
     {
         if (Token != null) body["i"] = Token;
-        var resp = await _http.PostAsJsonAsync($"{ServerUrl}/api/{endpoint}", body, JsonOpts, ct);
+        using var resp = await _http.PostAsJsonAsync($"{ServerUrl}/api/{endpoint}", body, JsonOpts, ct);
         if (!resp.IsSuccessStatusCode)
             throw new MisskeyApiException(resp.StatusCode, await resp.Content.ReadAsStringAsync(ct));
     }
@@ -532,12 +535,18 @@ public class MisskeyApiClient
     private async Task<T> PostRawAsync<T>(string url, Dictionary<string, object?> body, CancellationToken ct)
     {
         if (Token != null) body["i"] = Token;
-        var resp = await _http.PostAsJsonAsync(url, body, JsonOpts, ct);
+        using var resp = await _http.PostAsJsonAsync(url, body, JsonOpts, ct);
         if (!resp.IsSuccessStatusCode)
             throw new MisskeyApiException(resp.StatusCode, await resp.Content.ReadAsStringAsync(ct));
         if (resp.StatusCode == System.Net.HttpStatusCode.NoContent)
             return default!;
-        return (await resp.Content.ReadFromJsonAsync<T>(JsonOpts, ct))!;
+        var payload = await resp.Content.ReadFromJsonAsync<T>(JsonOpts, ct);
+        if (payload is null)
+            throw new MisskeyApiException(
+                resp.StatusCode,
+                "Response body was empty or invalid JSON.");
+
+        return payload;
     }
 }
 

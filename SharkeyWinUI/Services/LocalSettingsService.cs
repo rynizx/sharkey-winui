@@ -15,6 +15,8 @@ internal sealed class LocalSettingsService
     private static readonly string SettingsFile =
         Path.Combine(SettingsFolder, "settings.json");
 
+    private static readonly object FileLock = new();
+
     private readonly Dictionary<string, object?> _cache;
     private readonly object _lock = new();
 
@@ -64,25 +66,34 @@ internal sealed class LocalSettingsService
 
     private void Save()
     {
-        Directory.CreateDirectory(SettingsFolder);
-        var json = JsonSerializer.Serialize(_cache, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(SettingsFile, json);
+        lock (FileLock)
+        {
+            Directory.CreateDirectory(SettingsFolder);
+            var json = JsonSerializer.Serialize(_cache, new JsonSerializerOptions { WriteIndented = true });
+
+            var tempPath = SettingsFile + ".tmp";
+            File.WriteAllText(tempPath, json);
+            File.Move(tempPath, SettingsFile, overwrite: true);
+        }
     }
 
     private static Dictionary<string, object?> Load()
     {
-        if (!File.Exists(SettingsFile))
-            return new Dictionary<string, object?>();
+        lock (FileLock)
+        {
+            if (!File.Exists(SettingsFile))
+                return new Dictionary<string, object?>();
 
-        try
-        {
-            var json = File.ReadAllText(SettingsFile);
-            return JsonSerializer.Deserialize<Dictionary<string, object?>>(json)
-                   ?? new Dictionary<string, object?>();
-        }
-        catch
-        {
-            return new Dictionary<string, object?>();
+            try
+            {
+                var json = File.ReadAllText(SettingsFile);
+                return JsonSerializer.Deserialize<Dictionary<string, object?>>(json)
+                       ?? new Dictionary<string, object?>();
+            }
+            catch
+            {
+                return new Dictionary<string, object?>();
+            }
         }
     }
 }

@@ -31,6 +31,7 @@ public class MisskeyStreamingService : IDisposable
 
     private ClientWebSocket? _ws;
     private CancellationTokenSource? _cts;
+    private readonly object _stateLock = new();
     private readonly Dictionary<string, string> _channelIds = new(); // channelName -> id
     private int _idCounter;
 
@@ -60,35 +61,65 @@ public class MisskeyStreamingService : IDisposable
             .Replace("http://", "ws://");
         wsUrl += $"/streaming?i={Uri.EscapeDataString(token)}&_t={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
 
-        _ws = new ClientWebSocket();
-        _ws.Options.SetRequestHeader("User-Agent", "SharkeyWinUI/1.0");
-        _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var ws = new ClientWebSocket();
+        ws.Options.SetRequestHeader("User-Agent", "SharkeyWinUI/1.0");
+        var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 
-        await _ws.ConnectAsync(new Uri(wsUrl), _cts.Token);
+        lock (_stateLock)
+        {
+            _ws = ws;
+            _cts = linkedCts;
+        }
+
+        try
+        {
+            await ws.ConnectAsync(new Uri(wsUrl), linkedCts.Token);
+        }
+        catch
+        {
+            lock (_stateLock)
+            {
+                if (ReferenceEquals(_ws, ws)) _ws = null;
+                if (ReferenceEquals(_cts, linkedCts)) _cts = null;
+            }
+
+            linkedCts.Dispose();
+            ws.Dispose();
+            throw;
+        }
+
         Connected?.Invoke();
 
-        _ = Task.Run(() => ReceiveLoopAsync(_cts.Token), _cts.Token);
+        _ = Task.Run(() => ReceiveLoopAsync(linkedCts.Token), linkedCts.Token);
     }
 
     /// <summary>Disconnects from the streaming endpoint.</summary>
     public void Disconnect()
     {
-        _cts?.Cancel();
-        _channelIds.Clear();
+        ClientWebSocket? ws;
+        CancellationTokenSource? cts;
+        lock (_stateLock)
+        {
+            ws = _ws;
+            cts = _cts;
+            _ws = null;
+            _cts = null;
+            _channelIds.Clear();
+        }
 
-        if (_ws != null)
+        cts?.Cancel();
+
+        if (ws != null)
         {
             // Per Microsoft Learn: do not block the UI thread.
             // ClientWebSocket.Abort() closes the connection immediately and
             // synchronously without sending a close handshake frame.
             // https://learn.microsoft.com/en-us/dotnet/api/system.net.websockets.clientwebsocket.abort
-            try { _ws.Abort(); } catch { /* ignore */ }
-            _ws.Dispose();
-            _ws = null;
+            try { ws.Abort(); } catch { /* ignore */ }
+            ws.Dispose();
         }
 
-        _cts?.Dispose();
-        _cts = null;
+        cts?.Dispose();
     }
 
     // ── Channel subscriptions ────────────────────────────────────────────────
@@ -148,6 +179,14 @@ public class MisskeyStreamingService : IDisposable
             // Re-check state after acquiring the lock
             if (_ws?.State == WebSocketState.Open)
                 await _ws.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, ct);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Socket was disposed while sending during teardown.
+        }
+        catch (WebSocketException)
+        {
+            // Best-effort send; callers handle stale subscriptions on reconnect.
         }
         finally
         {
