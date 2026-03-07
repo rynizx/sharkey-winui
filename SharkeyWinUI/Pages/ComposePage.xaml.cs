@@ -296,8 +296,9 @@ public sealed partial class ComposePage : Page
 
     private void SetPosting(bool posting)
     {
-        PostingBar.Visibility = posting ? Visibility.Visible : Visibility.Collapsed;
-        PostButton.IsEnabled  = !posting;
+        PostingBar.Visibility  = posting ? Visibility.Visible : Visibility.Collapsed;
+        PostButton.IsEnabled   = !posting;
+        CancelButton.IsEnabled = !posting;
     }
 
     private void ShowError(string msg)

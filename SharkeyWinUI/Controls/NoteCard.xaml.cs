@@ -649,9 +649,27 @@ public sealed partial class NoteCard : UserControl
             else
                 await App.ApiClient.AddReactionAsync(noteId, reaction);
         }
+        catch (MisskeyApiException ex)
+        {
+            Debug.WriteLine($"NoteCard: Failed to send reaction: {ex.ResponseBody}");
+            var dlg = new ContentDialog
+            {
+                Title = "Could not send reaction",
+                Content = $"The server returned an error: {ex.ResponseBody}",
+                CloseButtonText = "OK",
+            };
+            await ShowDialogAsync(dlg);
+        }
         catch (Exception ex)
         {
             Debug.WriteLine($"NoteCard: Failed to send reaction: {ex.Message}");
+            var dlg = new ContentDialog
+            {
+                Title = "Could not send reaction",
+                Content = ex.Message,
+                CloseButtonText = "OK",
+            };
+            await ShowDialogAsync(dlg);
         }
     }
 
@@ -661,6 +679,7 @@ public sealed partial class NoteCard : UserControl
         var displayNote = GetDisplayNote();
         if (displayNote == null) return;
 
+        FavouriteButton.IsEnabled = false;
         try
         {
             if (_isFavourited)
@@ -676,13 +695,35 @@ public sealed partial class NoteCard : UserControl
                 FavouriteIcon.Glyph = "\uE735";
             }
         }
+        catch (MisskeyApiException ex)
+        {
+            Debug.WriteLine($"NoteCard: Failed to toggle favourite: {ex.ResponseBody}");
+            var dlg = new ContentDialog
+            {
+                Title = "Could not update favourite",
+                Content = $"The server returned an error: {ex.ResponseBody}",
+                CloseButtonText = "OK",
+            };
+            await ShowDialogAsync(dlg);
+        }
         catch (Exception ex)
         {
             Debug.WriteLine($"NoteCard: Failed to toggle favourite: {ex.Message}");
+            var dlg = new ContentDialog
+            {
+                Title = "Could not update favourite",
+                Content = ex.Message,
+                CloseButtonText = "OK",
+            };
+            await ShowDialogAsync(dlg);
+        }
+        finally
+        {
+            FavouriteButton.IsEnabled = true;
         }
     }
 
-    private void CopyLinkItem_Click(object sender, RoutedEventArgs e)
+    private async void CopyLinkItem_Click(object sender, RoutedEventArgs e)
     {
         if (Note == null) return;
         var displayNote = GetDisplayNote();
@@ -694,10 +735,23 @@ public sealed partial class NoteCard : UserControl
             var dp = new DataPackage();
             dp.SetText(url);
             Clipboard.SetContent(dp);
+
+            // Brief visual feedback — restore text after 1.5 s
+            CopyLinkItem.Text = "Copied!";
+            await Task.Delay(1500);
+            if (IsLoaded) CopyLinkItem.Text = "Copy link";
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"NoteCard: Failed to copy link: {ex.Message}");
+            CopyLinkItem.Text = "Copy link";
+            var dlg = new ContentDialog
+            {
+                Title = "Could not copy link",
+                Content = ex.Message,
+                CloseButtonText = "OK",
+            };
+            await ShowDialogAsync(dlg);
         }
     }
 

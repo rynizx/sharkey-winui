@@ -54,6 +54,7 @@ public sealed partial class NotificationsPage : Page
     {
         SetLoading(true);
         ErrorBar.IsOpen = false;
+        EmptyState.Visibility = Visibility.Collapsed;
         if (refresh) { _notifs.Clear(); _untilId = null; }
 
         try
@@ -73,6 +74,7 @@ public sealed partial class NotificationsPage : Page
 
             LoadMoreButton.Visibility = batch.Count == 30
                 ? Visibility.Visible : Visibility.Collapsed;
+            EmptyState.Visibility = _notifs.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
         catch (OperationCanceledException) { }
         catch (MisskeyApiException ex) { ShowError($"API error {(int)ex.StatusCode}: {ex.ResponseBody}"); }

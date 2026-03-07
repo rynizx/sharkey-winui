@@ -61,6 +61,7 @@ public sealed partial class TimelinePage : Page
     {
         SetLoading(true);
         ErrorBar.IsOpen = false;
+        EmptyState.Visibility = Visibility.Collapsed;
 
         if (refresh)
         {
@@ -78,6 +79,7 @@ public sealed partial class TimelinePage : Page
                 _untilId = batch[^1].Id;
 
             LoadMoreButton.Visibility = batch.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            EmptyState.Visibility = _notes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
         catch (OperationCanceledException)
         {

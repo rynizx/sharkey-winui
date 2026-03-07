@@ -151,6 +151,22 @@ public sealed partial class MainWindow : Window
         await ConnectStreamingAsync();
     }
 
+    /// <summary>Called by AccountSettingsPage when the user chooses to sign out.</summary>
+    public void OnSignedOut()
+    {
+        _streaming.Disconnect();
+        App.AuthService.SignOut();
+
+        NavView.IsPaneVisible    = false;
+        NavView.IsPaneOpen       = false;
+        ComposeButton.Visibility = Visibility.Collapsed;
+        _currentNavTag           = null;
+
+        ContentFrame.BackStack.Clear();
+        ContentFrame.Navigate(typeof(LoginPage));
+        UpdateTitleBar();
+    }
+
     private void ShowAuthenticatedUI()
     {
         NavView.IsPaneVisible    = true;

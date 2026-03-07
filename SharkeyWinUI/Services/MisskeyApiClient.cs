@@ -276,6 +276,16 @@ public class MisskeyApiClient
                 ("includeMyRenotes", includeMyRenotes),
                 ("withFiles", withFiles)), ct);
 
+    /// <summary>
+    /// Returns the daily note-count chart for a user.
+    /// Arrays in the result are ordered newest-first.
+    /// </summary>
+    public Task<UserNotesChartData> GetUserNotesChartAsync(
+        string userId, int limit = 30, string span = "day",
+        CancellationToken ct = default)
+        => PostAsync<UserNotesChartData>("charts/user/notes",
+            new Dictionary<string, object?> { ["userId"] = userId, ["limit"] = limit, ["span"] = span }, ct);
+
     /// <summary>Returns the list of users a given user is following.</summary>
     public Task<List<FollowEntry>> GetFollowingAsync(
         string userId, int limit = 30, string? untilId = null, CancellationToken ct = default)

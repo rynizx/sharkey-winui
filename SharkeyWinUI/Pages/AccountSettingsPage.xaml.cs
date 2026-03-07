@@ -31,6 +31,25 @@ public sealed partial class AccountSettingsPage : Page
         _cts = new CancellationTokenSource();
     }
 
+    // ── Sign out ──────────────────────────────────────────────────────────────
+
+    private async void SignOutButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ContentDialog
+        {
+            Title             = "Sign out",
+            Content           = "This will remove your saved credentials. You will need to sign in again.",
+            PrimaryButtonText = "Sign out",
+            CloseButtonText   = "Cancel",
+            DefaultButton     = ContentDialogButton.Close,
+            XamlRoot          = XamlRoot,
+        };
+
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+
+        App.MainWindow!.OnSignedOut();
+    }
+
     // ── Appearance section ────────────────────────────────────────────────────
 
     private void PopulateAppearanceSection()

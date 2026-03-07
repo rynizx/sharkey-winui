@@ -114,16 +114,17 @@
             <!-- Error -->
             <InfoBar x:Name="ErrorBar" IsOpen="False" IsClosable="True" Severity="Error" />
 
+            <!-- Posting progress -->
+            <ProgressBar x:Name="PostingBar" IsIndeterminate="True" Visibility="Collapsed" />
+
             <!-- Actions -->
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                <Button Content="Cancel" Click="CancelButton_Click" />
+                <Button x:Name="CancelButton" Content="Cancel" Click="CancelButton_Click" />
                 <Button x:Name="PostButton"
                         Content="Post"
                         Style="{StaticResource AccentButtonStyle}"
                         Click="PostButton_Click" />
             </StackPanel>
-
-            <ProgressBar x:Name="PostingBar" IsIndeterminate="True" Visibility="Collapsed" />
 
         </StackPanel>
     </ScrollViewer>

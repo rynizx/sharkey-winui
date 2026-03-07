@@ -121,9 +121,29 @@
             </ListView.Footer>
         </ListView>
 
+        <!-- Loading bar overlaid on the list area -->
         <ProgressBar x:Name="LoadingBar" Grid.Row="3"
                      IsIndeterminate="True"
                      VerticalAlignment="Top"
                      Visibility="Collapsed" />
+
+        <!-- Empty state — shown when there are no notifications -->
+        <StackPanel x:Name="EmptyState"
+                    Grid.Row="3"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Spacing="12"
+                    Visibility="Collapsed">
+            <FontIcon Glyph="&#xEA8F;" FontSize="48"
+                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                      HorizontalAlignment="Center" />
+            <TextBlock Text="No notifications"
+                       Style="{StaticResource SubtitleTextBlockStyle}"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="You're all caught up!"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
     </Grid>
 </Page>

@@ -9,86 +9,195 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <ScrollViewer>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel>
 
             <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Visibility="Collapsed" />
             <InfoBar x:Name="ErrorBar" IsOpen="False" IsClosable="True" Severity="Error" />
 
-            <!-- Banner -->
-            <Grid Height="180">
-                <Image x:Name="BannerImage" Stretch="UniformToFill" />
-                <Rectangle Fill="{ThemeResource LayerOnAcrylicFillColorDefaultBrush}" Opacity="0.35" />
+            <!-- ══ Hero: banner + avatar overlap ══════════════════════════════ -->
+            <Grid>
+
+                <!-- Banner image (220 px tall) -->
+                <Grid Height="220" x:Name="BannerGrid">
+                    <!-- Fallback gradient shown when no banner is set -->
+                    <Rectangle x:Name="BannerFallback"
+                               Fill="{ThemeResource SystemAccentColorDark2}" />
+                    <Image x:Name="BannerImage" Stretch="UniformToFill" />
+                    <!-- Bottom gradient fade so avatar area blends nicely -->
+                    <Rectangle VerticalAlignment="Bottom" Height="90">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="Transparent" Offset="0" />
+                                <GradientStop Color="#CC000000" Offset="1" />
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+                </Grid>
+
+                <!-- Avatar + name strip overlaid on the banner bottom -->
+                <Grid Padding="20,0,20,0" VerticalAlignment="Bottom"
+                      Margin="0,160,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Avatar with elevated white ring -->
+                    <Border CornerRadius="52"
+                            BorderBrush="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+                            BorderThickness="4"
+                            Width="100" Height="100"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,0,-16">
+                        <Ellipse Width="92" Height="92">
+                            <Ellipse.Fill>
+                                <ImageBrush x:Name="AvatarBrush" Stretch="UniformToFill" />
+                            </Ellipse.Fill>
+                        </Ellipse>
+                    </Border>
+
+                    <!-- Name + handle (on dark gradient) -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Bottom"
+                                Margin="14,0,0,4" Spacing="1">
+                        <TextBlock x:Name="DisplayNameText"
+                                   Style="{StaticResource TitleTextBlockStyle}"
+                                   Foreground="White"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="UsernameText"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="#CCFFFFFF" />
+                    </StackPanel>
+
+                    <!-- Follow / action buttons -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8"
+                                VerticalAlignment="Bottom" Margin="0,0,0,4">
+                        <Button x:Name="FollowButton"
+                                Content="Follow"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Click="FollowButton_Click"
+                                Visibility="Collapsed" />
+                        <Button x:Name="UnfollowButton"
+                                Content="Unfollow"
+                                Click="UnfollowButton_Click"
+                                Visibility="Collapsed" />
+                        <Button x:Name="PendingButton"
+                                Content="Requested"
+                                IsEnabled="False"
+                                Visibility="Collapsed" />
+                        <Button x:Name="BlockButton"
+                                Content="Blocked"
+                                Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                Visibility="Collapsed"
+                                Click="BlockButton_Click" />
+                    </StackPanel>
+                </Grid>
+
             </Grid>
 
-            <!-- Avatar + actions row -->
-            <Grid Padding="20,-36,20,0" ColumnSpacing="14">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+            <!-- ══ Profile body ════════════════════════════════════════════════ -->
+            <StackPanel Padding="20,28,20,12" Spacing="12"
+                        MaxWidth="680" HorizontalAlignment="Left" Margin="0,0,0,0">
 
-                <!-- Avatar with ring -->
-                <Border CornerRadius="42" BorderBrush="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderThickness="3" Width="84" Height="84" VerticalAlignment="Bottom">
-                    <Ellipse Width="78" Height="78">
-                        <Ellipse.Fill>
-                            <ImageBrush x:Name="AvatarBrush" Stretch="UniformToFill" />
-                        </Ellipse.Fill>
-                    </Ellipse>
-                </Border>
-
-                <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Spacing="2">
-                    <TextBlock x:Name="DisplayNameText"
-                               Style="{StaticResource SubtitleTextBlockStyle}" />
-                    <TextBlock x:Name="UsernameText"
-                               Style="{StaticResource CaptionTextBlockStyle}"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                </StackPanel>
-
-                <!-- Follow / Unfollow / Pending -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8"
-                            VerticalAlignment="Bottom">
-                    <Button x:Name="FollowButton"
-                            Content="Follow"
-                            Style="{StaticResource AccentButtonStyle}"
-                            Click="FollowButton_Click"
-                            Visibility="Collapsed" />
-                    <Button x:Name="UnfollowButton"
-                            Content="Unfollow"
-                            Click="UnfollowButton_Click"
-                            Visibility="Collapsed" />
-                    <Button x:Name="PendingButton"
-                            Content="Requested"
-                            IsEnabled="False"
-                            Visibility="Collapsed" />
-                    <Button x:Name="BlockButton"
-                            Content="Blocked"
-                            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
-                            Visibility="Collapsed"
-                            Click="BlockButton_Click" />
-                </StackPanel>
-            </Grid>
-
-            <!-- Bio + meta -->
-            <StackPanel Padding="20,14" Spacing="10">
-                <TextBlock x:Name="BioText" TextWrapping="Wrap" LineHeight="22" />
-
+                <!-- Roles / badges -->
                 <StackPanel x:Name="RolesPanel" Orientation="Horizontal"
                             Spacing="6" Visibility="Collapsed" />
 
-                <!-- Fields -->
+                <!-- Bio -->
+                <TextBlock x:Name="BioText"
+                           TextWrapping="Wrap"
+                           LineHeight="22"
+                           Visibility="Collapsed" />
+
+                <!-- Metadata row: location · birthday · joined -->
+                <StackPanel x:Name="MetaRow" Orientation="Horizontal"
+                            Spacing="16" Visibility="Collapsed">
+                    <StackPanel x:Name="LocationItem" Orientation="Horizontal"
+                                Spacing="4" Visibility="Collapsed">
+                        <FontIcon Glyph="&#xE707;" FontSize="13"
+                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <TextBlock x:Name="LocationText"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <StackPanel x:Name="BirthdayItem" Orientation="Horizontal"
+                                Spacing="4" Visibility="Collapsed">
+                        <FontIcon Glyph="&#xED55;" FontSize="13"
+                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <TextBlock x:Name="BirthdayText"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <StackPanel x:Name="JoinedItem" Orientation="Horizontal"
+                                Spacing="4" Visibility="Collapsed">
+                        <FontIcon Glyph="&#xEC92;" FontSize="13"
+                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <TextBlock x:Name="JoinedText"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Stats row -->
                 <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        CornerRadius="8" Padding="12,8"
+                        CornerRadius="10"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1">
+                        BorderThickness="1"
+                        Padding="16,10">
+                    <StackPanel Orientation="Horizontal" Spacing="0">
+                        <!-- Notes -->
+                        <StackPanel HorizontalAlignment="Center" MinWidth="80">
+                            <TextBlock x:Name="NotesCountText"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="Notes"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                        <Rectangle Width="1" VerticalAlignment="Stretch"
+                                   Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                   Margin="0,4" />
+                        <!-- Following -->
+                        <StackPanel HorizontalAlignment="Center" MinWidth="80">
+                            <TextBlock x:Name="FollowingCountText"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="Following"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                        <Rectangle Width="1" VerticalAlignment="Stretch"
+                                   Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                   Margin="0,4" />
+                        <!-- Followers -->
+                        <StackPanel HorizontalAlignment="Center" MinWidth="80">
+                            <TextBlock x:Name="FollowersCountText"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"
+                                       HorizontalAlignment="Center" />
+                            <TextBlock Text="Followers"
+                                       Style="{StaticResource CaptionTextBlockStyle}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Profile fields table -->
+                <Border x:Name="FieldsCard"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        CornerRadius="10"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        Visibility="Collapsed">
                     <ItemsControl x:Name="FieldsList">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid ColumnSpacing="12" Margin="0,4">
+                                <Grid ColumnSpacing="16" Padding="16,8">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="130" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding Name}"
@@ -96,83 +205,150 @@
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1" Text="{Binding Value}"
-                                               TextWrapping="Wrap" VerticalAlignment="Center" />
+                                               TextWrapping="Wrap"
+                                               VerticalAlignment="Center" />
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="BorderBrush"
+                                        Value="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                                <Setter Property="BorderThickness" Value="0,0,0,1" />
+                            </Style>
+                        </ItemsControl.ItemContainerStyle>
                     </ItemsControl>
                 </Border>
 
-                <!-- Stats row -->
-                <StackPanel Orientation="Horizontal" Spacing="24" Margin="0,4,0,0">
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock x:Name="NotesCountText"
-                                   Style="{StaticResource BodyStrongTextBlockStyle}"
-                                   HorizontalAlignment="Center" />
-                        <TextBlock Text="Notes"
-                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   HorizontalAlignment="Center" />
+                <!-- Federated instance badge -->
+                <Border x:Name="InstanceBadge"
+                        Background="{ThemeResource SystemFillColorAttentionBackgroundBrush}"
+                        CornerRadius="6" Padding="10,5"
+                        HorizontalAlignment="Left"
+                        Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE774;" FontSize="12" />
+                        <TextBlock x:Name="InstanceText"
+                                   Style="{StaticResource CaptionTextBlockStyle}" />
                     </StackPanel>
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock x:Name="FollowingCountText"
-                                   Style="{StaticResource BodyStrongTextBlockStyle}"
-                                   HorizontalAlignment="Center" />
-                        <TextBlock Text="Following"
-                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   HorizontalAlignment="Center" />
-                    </StackPanel>
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock x:Name="FollowersCountText"
-                                   Style="{StaticResource BodyStrongTextBlockStyle}"
-                                   HorizontalAlignment="Center" />
-                        <TextBlock Text="Followers"
-                                   Style="{StaticResource CaptionTextBlockStyle}"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   HorizontalAlignment="Center" />
-                    </StackPanel>
-                </StackPanel>
-
-                <!-- Federated instance info -->
-                <TextBlock x:Name="InstanceText"
-                           Style="{StaticResource CaptionTextBlockStyle}"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                           Visibility="Collapsed" />
+                </Border>
 
             </StackPanel>
 
-            <!-- Notes tab -->
-            <Rectangle Height="1" HorizontalAlignment="Stretch"
-                       Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
-                       Margin="20,4,20,0" />
-            <TextBlock Text="Notes" Padding="20,12,20,8"
-                       Style="{StaticResource BodyStrongTextBlockStyle}" />
+            <!-- ══ Two-column body: notes + sidebar ═══════════════════════════ -->
+            <Grid Padding="16,0,16,24" ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="300" />
+                </Grid.ColumnDefinitions>
 
-            <ListView x:Name="NotesList" Margin="8,0"
-                      SelectionMode="None"
-                      IsItemClickEnabled="True"
-                      ItemClick="NotesList_ItemClick">
-                <ListView.ItemContainerStyle>
-                    <Style TargetType="ListViewItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Padding" Value="0" />
-                        <Setter Property="Margin" Value="0,2" />
-                    </Style>
-                </ListView.ItemContainerStyle>
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <controls:NoteCard Note="{Binding}" />
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
+                <!-- ── Notes feed (left) ──────────────────────────────────── -->
+                <StackPanel>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Notes"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   VerticalAlignment="Center" />
+                        <Rectangle Grid.Column="1" Height="1" VerticalAlignment="Center"
+                                   Margin="12,0,0,0"
+                                   Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
+                    </Grid>
 
-            <Button x:Name="LoadMoreNotesButton"
-                    Content="Load more notes"
-                    HorizontalAlignment="Center"
-                    Margin="0,12,0,20"
-                    Visibility="Collapsed"
-                    Click="LoadMoreNotesButton_Click" />
+                    <ListView x:Name="NotesList"
+                              SelectionMode="None"
+                              IsItemClickEnabled="True"
+                              ItemClick="NotesList_ItemClick">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,2" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <controls:NoteCard Note="{Binding}" />
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <Button x:Name="LoadMoreNotesButton"
+                            Content="Load more notes"
+                            HorizontalAlignment="Center"
+                            Margin="0,12,0,0"
+                            Visibility="Collapsed"
+                            Click="LoadMoreNotesButton_Click" />
+                </StackPanel>
+
+                <!-- ── Sidebar widgets (right) ────────────────────────────── -->
+                <StackPanel Grid.Column="1" Spacing="12" VerticalAlignment="Top">
+
+                    <!-- Files card -->
+                    <Border x:Name="FilesCard"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            CornerRadius="10"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            Visibility="Collapsed">
+                        <StackPanel Padding="12,10,12,12" Spacing="10">
+                            <!-- Header -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE8B7;" FontSize="14" />
+                                    <TextBlock Text="Files"
+                                               Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Thumbnail grid -->
+                            <ItemsControl x:Name="FilesPanel">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <ItemsWrapGrid Orientation="Horizontal"
+                                                       ItemWidth="88" ItemHeight="82"
+                                                       MaximumRowsOrColumns="3" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="2" CornerRadius="4"
+                                                Background="{ThemeResource LayerFillColorDefaultBrush}">
+                                            <Image Source="{Binding ThumbnailUrl}"
+                                                   Stretch="UniformToFill" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Activity card -->
+                    <Border x:Name="ActivityCard"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            CornerRadius="10"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            Visibility="Collapsed">
+                        <StackPanel Padding="12,10,12,14" Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE9D9;" FontSize="14" />
+                                <TextBlock Text="Activity"
+                                           Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            </StackPanel>
+                            <!-- Bar chart rendered in code-behind -->
+                            <Canvas x:Name="ActivityCanvas" Height="60" />
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </Grid>
 
         </StackPanel>
     </ScrollViewer>

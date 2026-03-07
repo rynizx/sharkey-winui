@@ -211,3 +211,21 @@ public class ActivityPubObject
     [JsonPropertyName("object")]
     public System.Text.Json.JsonElement? Object { get; set; }
 }
+
+/// <summary>Daily note-count chart returned by charts/user/notes. Arrays are newest-first.</summary>
+public class UserNotesChartData
+{
+    [JsonPropertyName("local")]
+    public UserNotesChartSeries Local { get; set; } = new();
+
+    [JsonPropertyName("remote")]
+    public UserNotesChartSeries Remote { get; set; } = new();
+}
+
+/// <summary>One series (local or remote) in a user notes chart.</summary>
+public class UserNotesChartSeries
+{
+    /// <summary>Per-day incremental note counts (newest first).</summary>
+    [JsonPropertyName("inc")]
+    public List<int> Inc { get; set; } = new();
+}

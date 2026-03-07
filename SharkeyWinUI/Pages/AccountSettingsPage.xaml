@@ -428,6 +428,30 @@
                 </Grid>
             </Button>
 
+            <!-- ── Sign out ──────────────────────────────────────────────── -->
+            <Button x:Name="SignOutButton"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                    Padding="16,14" Margin="0,4,0,0"
+                    Click="SignOutButton_Click">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <FontIcon Glyph="&#xF3B1;" FontSize="18" VerticalAlignment="Center"
+                              Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                    <StackPanel Grid.Column="1" Margin="14,0,0,0" Spacing="2"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="Sign out"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                        <TextBlock Text="Remove saved credentials and return to login"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </Grid>
+            </Button>
+
             <!-- ── Windows Hello ─────────────────────────────────────────── -->
             <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                 <Expander.Header>

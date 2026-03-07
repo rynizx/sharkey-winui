@@ -44,6 +44,25 @@
                      VerticalAlignment="Top"
                      Visibility="Collapsed" />
 
+        <!-- Empty state — shown when timeline loaded successfully but is empty -->
+        <StackPanel x:Name="EmptyState"
+                    Grid.Row="2"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Spacing="12"
+                    Visibility="Collapsed">
+            <FontIcon Glyph="&#xE7C3;" FontSize="48"
+                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                      HorizontalAlignment="Center" />
+            <TextBlock Text="Nothing here yet"
+                       Style="{StaticResource SubtitleTextBlockStyle}"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="Refresh to check for new notes."
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+
         <!-- Notes list -->
         <ListView x:Name="NotesList"
                   Grid.Row="2"
