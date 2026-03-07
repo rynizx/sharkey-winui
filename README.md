@@ -86,8 +86,8 @@ GitHub Actions automatically builds, tests, and packages the app:
 | Trigger | Jobs |
 |---|---|
 | Push / PR to `main` or `copilot/**` | **Build** → compile, restore, test |
-| Merge to `main` | **Build** + **Package** → MSIX artifact |
-| Push a version tag `v*.*.*` | **Build** + **Package** + **Release** → MSIX attached to GitHub Release |
+| Merge to `main` | **Build** + **Package** → MSIX + portable ZIP artifacts |
+| Push a version tag `v*.*.*` | **Build** + **Package** + **Release** → MSIX + ZIP + SHA256 checksums attached to GitHub Release |
 
 See [`.github/workflows/build.yml`](.github/workflows/build.yml).
 
@@ -101,9 +101,51 @@ git push origin v1.0.0
 
 ## Signing
 
-The workflow uses `AppxPackageSigningEnabled=false` by default (unsigned, suitable for side-loading).  
-To distribute via the Microsoft Store, provide a code-signing certificate and set the
-`PackageCertificateKeyFile` / `PackageCertificatePassword` repository secrets.
+The package workflow signs artifacts when certificate secrets are available.
+
+Required repository secrets:
+- `PACKAGE_CERT_PFX_BASE64` — base64-encoded `.pfx` certificate
+- `PACKAGE_CERT_PASSWORD` — certificate password
+- `PACKAGE_CERT_SUBJECT` *(optional but recommended)* — certificate subject string used for manifest validation (example: `CN=Your Company, O=Your Org, C=US`)
+
+Where to set them:
+- GitHub repository `Settings` → `Secrets and variables` → `Actions` → `New repository secret`
+- Add each secret by the exact names above.
+
+Behavior:
+- If both secrets are present, package artifacts are signed and named with `-signed`.
+- If either secret is missing, the workflow falls back to unsigned packaging and names artifacts with `-unsigned`.
+- If `PACKAGE_CERT_SUBJECT` is set, CI validates it against `SharkeyWinUI/Package.appxmanifest` publisher before publish.
+
+No cert yet:
+- You can keep shipping now. CI will still build and publish `-unsigned` artifacts.
+- For real end-user trust (SmartScreen reputation + cleaner install experience), obtain an OV/EV code-signing certificate from a trusted CA.
+- For testing the signed pipeline only, use a local self-signed cert (not for public distribution).
+
+Manifest identity requirement:
+- `SharkeyWinUI/Package.appxmanifest` `<Identity Publisher="..." />` must match your signing certificate subject exactly.
+- Example:
+
+```xml
+<Identity Name="SharkeyWinUI" Publisher="CN=Your Company, O=Your Org, C=US" Version="1.0.0.0" />
+```
+
+Example (PowerShell) to create the base64 value for `PACKAGE_CERT_PFX_BASE64`:
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\path\to\certificate.pfx"))
+```
+
+Generate a test cert and print ready-to-paste secret values:
+
+```powershell
+./scripts/prepare-dev-signing-secrets.ps1 -CertName "SharkeyWinUI Dev" -Password "Use-A-Unique-Password"
+```
+
+Release assets include:
+- `.msix` package (primary installer)
+- Portable `.zip` package
+- `SHA256SUMS.txt` checksums
 
 ---
 

@@ -7,7 +7,7 @@
 
   <Identity
     Name="SharkeyWinUI"
-    Publisher="CN=SharkeyWinUI"
+    Publisher="CN=SharkeyWinUI Dev"
     Version="1.0.0.0" />
 
   <Properties>
