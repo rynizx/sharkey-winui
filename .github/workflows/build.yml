@@ -173,6 +173,22 @@ jobs:
               if ($null -eq $cert -or [string]::IsNullOrWhiteSpace($cert.Subject)) {
                 throw "Certificate could not be loaded from PFX."
               }
+              if (-not $cert.HasPrivateKey) {
+                throw "Certificate does not contain a private key."
+              }
+              $hasCodeSigningEku = $false
+              foreach ($ext in $cert.Extensions) {
+                if ($ext -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]) {
+                  foreach ($oid in $ext.EnhancedKeyUsages) {
+                    if ($oid.Value -eq "1.3.6.1.5.5.7.3.3") {
+                      $hasCodeSigningEku = $true
+                    }
+                  }
+                }
+              }
+              if (-not $hasCodeSigningEku) {
+                throw "Certificate is missing the Code Signing EKU (1.3.6.1.5.5.7.3.3)."
+              }
               $signingReason = "validated"
               Write-Host "Signing certificate preflight succeeded: $($cert.Subject)"
             } catch {
@@ -217,15 +233,23 @@ jobs:
           Write-Host "Manifest publisher matches PACKAGE_CERT_SUBJECT."
 
       - name: Materialize signing certificate
-        id: write_cert
+        id: import_cert
         if: steps.signing_preflight.outputs.signing_available == 'true'
         shell: pwsh
         env:
           PACKAGE_CERT_PFX_BASE64: ${{ secrets.PACKAGE_CERT_PFX_BASE64 }}
+          PACKAGE_CERT_PASSWORD: ${{ secrets.PACKAGE_CERT_PASSWORD }}
         run: |
           $certPath = Join-Path $env:RUNNER_TEMP "signing-cert.pfx"
           [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:PACKAGE_CERT_PFX_BASE64))
+          $securePassword = ConvertTo-SecureString $env:PACKAGE_CERT_PASSWORD -AsPlainText -Force
+          $imported = Import-PfxCertificate -FilePath $certPath -Password $securePassword -CertStoreLocation "Cert:\CurrentUser\My"
+          if ($null -eq $imported -or [string]::IsNullOrWhiteSpace($imported.Thumbprint)) {
+            throw "Failed to import signing certificate into CurrentUser\\My store."
+          }
           "cert_path=$certPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "cert_thumbprint=$($imported.Thumbprint)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "Imported signing certificate with thumbprint $($imported.Thumbprint)."
 
       # Build a self-contained MSIX for side-loading
       - name: Publish (self-contained signed MSIX)
@@ -241,8 +265,7 @@ jobs:
           -p:AppxPackageDir=${{ github.workspace }}/artifacts/msix/
           -p:GenerateAppxPackageOnBuild=true
           -p:AppxPackageSigningEnabled=true
-          -p:PackageCertificateKeyFile="${{ steps.write_cert.outputs.cert_path }}"
-          -p:PackageCertificatePassword="${{ secrets.PACKAGE_CERT_PASSWORD }}"
+          -p:PackageCertificateThumbprint=${{ steps.import_cert.outputs.cert_thumbprint }}
           -p:Version=${{ steps.version.outputs.VERSION }}
           --output ./artifacts/publish
 
@@ -272,11 +295,14 @@ jobs:
           "zip_path=$zipPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Cleanup signing certificate
-        if: always() && steps.write_cert.outputs.cert_path != ''
+        if: always() && steps.import_cert.outputs.cert_path != ''
         shell: pwsh
         run: |
-          if (Test-Path "${{ steps.write_cert.outputs.cert_path }}") {
-            Remove-Item "${{ steps.write_cert.outputs.cert_path }}" -Force
+          if ("${{ steps.import_cert.outputs.cert_thumbprint }}") {
+            Get-ChildItem "Cert:\CurrentUser\My\${{ steps.import_cert.outputs.cert_thumbprint }}" -ErrorAction SilentlyContinue | Remove-Item -Force
+          }
+          if (Test-Path "${{ steps.import_cert.outputs.cert_path }}") {
+            Remove-Item "${{ steps.import_cert.outputs.cert_path }}" -Force
           }
 
       - name: Upload MSIX artifact

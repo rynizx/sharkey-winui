@@ -60,6 +60,8 @@ public sealed partial class NoteCard : UserControl
 
     // Tracks the last avatar URL set so we skip re-creating BitmapImage when unchanged.
     private string? _lastAvatarUrl;
+    private bool _displayHasMedia;
+    private bool _displayHasPoll;
 
     // Static caches for app-global style and brush resources — looked up once per key.
     private static readonly Dictionary<string, Style?> _styleCache = new();
@@ -165,16 +167,23 @@ public sealed partial class NoteCard : UserControl
             {
                 CwPanel.Visibility = Visibility.Visible;
                 CwText.Text = displayNote.ContentWarning!;
-                BodyText.Visibility = Visibility.Collapsed;
+                CwToggle.IsChecked = false;
+                CwToggle.Content = "Show content";
+                ApplyContentWarningState(showContent: false);
             }
             else
             {
                 CwPanel.Visibility = Visibility.Collapsed;
-                BodyText.Visibility = Visibility.Visible;
+                CwToggle.IsChecked = false;
+                CwToggle.Content = "Show content";
+                ApplyContentWarningState(showContent: true);
             }
 
             // Body text (plain — full MFM rendering would require a parser)
             BodyText.Text = displayNote.DisplayText ?? string.Empty;
+
+            _displayHasMedia = displayNote.Files.Any(f => f.IsImage);
+            _displayHasPoll = displayNote.Poll != null;
 
             // Media
             PopulateMedia(displayNote);
@@ -188,6 +197,10 @@ public sealed partial class NoteCard : UserControl
             // Action bar counts
             RepliesCountText.Text = displayNote.RepliesCount.ToString();
             RenoteCountText.Text  = displayNote.RenoteCount.ToString();
+
+            // Re-apply CW state after media/poll/reaction renderers have set their own visibility.
+            if (displayNote.HasContentWarning)
+                ApplyContentWarningState(CwToggle.IsChecked == true);
 
             // Favourite icon state — reset local tracking so the icon reflects the
             // current note, not a stale state from a previously displayed note.
@@ -556,14 +569,23 @@ public sealed partial class NoteCard : UserControl
 
     private void CwToggle_Checked(object sender, RoutedEventArgs e)
     {
-        BodyText.Visibility = Visibility.Visible;
+        ApplyContentWarningState(showContent: true);
         ((ToggleButton)sender).Content = "Hide content";
     }
 
     private void CwToggle_Unchecked(object sender, RoutedEventArgs e)
     {
-        BodyText.Visibility = Visibility.Collapsed;
+        ApplyContentWarningState(showContent: false);
         ((ToggleButton)sender).Content = "Show content";
+    }
+
+    private void ApplyContentWarningState(bool showContent)
+    {
+        var visibility = showContent ? Visibility.Visible : Visibility.Collapsed;
+        BodyText.Visibility = visibility;
+        MediaGrid.Visibility = showContent && _displayHasMedia ? Visibility.Visible : Visibility.Collapsed;
+        PollPanel.Visibility = showContent && _displayHasPoll ? Visibility.Visible : Visibility.Collapsed;
+        ReactionsPanel.Visibility = visibility;
     }
 
     private void ReplyButton_Click(object sender, RoutedEventArgs e)

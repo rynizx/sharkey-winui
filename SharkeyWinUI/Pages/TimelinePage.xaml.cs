@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using SharkeyWinUI.Models;
 using SharkeyWinUI.Services;
@@ -152,13 +153,39 @@ public sealed partial class TimelinePage : Page
     {
         if (!DispatcherQueue.TryEnqueue(() =>
         {
-            // Prepend the new note to the top, de-duplicating by ID
-            if (_notes.All(n => n.Id != note.Id))
+            // Only prepend while near the top; inserting above while mid-scroll can
+            // cause WinUI ListView to snap unexpectedly.
+            if (_notes.All(n => n.Id != note.Id) && IsNearTop())
                 _notes.Insert(0, note);
         }))
         {
             System.Diagnostics.Debug.WriteLine("TimelinePage: Dispatcher unavailable, dropping streamed note update.");
         }
+    }
+
+    private bool IsNearTop()
+    {
+        var scrollViewer = FindDescendant<ScrollViewer>(NotesList);
+        if (scrollViewer == null)
+            return true;
+
+        return scrollViewer.VerticalOffset <= 24;
+    }
+
+    private static T? FindDescendant<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match)
+                return match;
+
+            var nested = FindDescendant<T>(child);
+            if (nested != null)
+                return nested;
+        }
+
+        return null;
     }
 
     // ── Event handlers ────────────────────────────────────────────────────────
