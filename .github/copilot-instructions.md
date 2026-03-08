@@ -84,3 +84,18 @@ SharkeyWinUI/
 - Do not add third-party HTTP or JSON libraries; use the built-in `HttpClient` and `System.Text.Json`.
 - Do not introduce a separate ViewModel layer unless explicitly requested — pages use code-behind.
 - Do not target non-Windows platforms.
+
+## AI Agent Guidance
+
+- AI agents should use official Microsoft Learn documentation as the primary reference for WinUI best practices, implementation quality, accessibility, and performance guidance.
+
+### Documentation Workflow
+
+1. Use Microsoft Learn search first to quickly find the most relevant and current guidance.
+2. Use Microsoft Learn code sample search when implementing WinUI features to align code with official patterns.
+3. Fetch full Microsoft Learn pages for final implementation details, prerequisites, troubleshooting, and accessibility/performance recommendations.
+4. Prefer Microsoft Learn over third-party tutorials when guidance conflicts.
+
+### Definition of Done
+
+- For major WinUI UI changes, completion requires a Microsoft Learn doc-backed check for best practices, quality, accessibility, and performance.

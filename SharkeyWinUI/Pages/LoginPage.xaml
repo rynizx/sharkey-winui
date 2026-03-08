@@ -9,16 +9,13 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="420">
-        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-            CornerRadius="8">
+        <Border Style="{StaticResource AppCardContainerStyle}">
         <StackPanel Spacing="16" Padding="32">
 
             <!-- Logo / Title -->
             <StackPanel HorizontalAlignment="Center" Spacing="8">
                 <FontIcon Glyph="&#xE909;" FontSize="48" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-                <TextBlock Text="Sharkey WinUI" Style="{StaticResource TitleTextBlockStyle}"
+                <TextBlock Text="Sharkey WinUI" Style="{StaticResource AppPageHeaderTextStyle}"
                            HorizontalAlignment="Center" />
                 <TextBlock Text="Sign in to your Misskey / Sharkey instance"
                            Style="{StaticResource CaptionTextBlockStyle}"

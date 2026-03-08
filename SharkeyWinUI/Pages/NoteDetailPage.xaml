@@ -9,8 +9,8 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <ScrollViewer Padding="8,0">
-        <StackPanel MaxWidth="680" HorizontalAlignment="Center">
+    <ScrollViewer>
+        <StackPanel MaxWidth="680" HorizontalAlignment="Center" Padding="{StaticResource AppPageContentPadding}">
 
             <!-- Loading / error -->
             <ProgressBar x:Name="LoadingBar" IsIndeterminate="True" Visibility="Collapsed" />
@@ -39,10 +39,10 @@
             <!-- Replies header -->
             <TextBlock Text="Replies"
                        Style="{StaticResource BodyStrongTextBlockStyle}"
-                       Margin="12,14,12,6" />
+                       Margin="0,14,0,6" />
 
             <!-- Replies list -->
-            <ListView x:Name="RepliesList" Margin="8,0,0,0"
+            <ListView x:Name="RepliesList"
                       SelectionMode="None"
                       IsItemClickEnabled="True"
                       ItemClick="RepliesList_ItemClick">
@@ -52,11 +52,7 @@
                     </ItemsPanelTemplate>
                 </ListView.ItemsPanel>
                 <ListView.ItemContainerStyle>
-                    <Style TargetType="ListViewItem">
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Padding" Value="0" />
-                        <Setter Property="Margin" Value="0,2" />
-                    </Style>
+                    <StaticResource ResourceKey="AppStretchListItemStyle" />
                 </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate>
@@ -68,9 +64,8 @@
             <!-- Load more replies -->
             <Button x:Name="LoadMoreRepliesButton"
                     Content="Load more replies"
+                    Style="{StaticResource AppLoadMoreButtonStyle}"
                     AutomationProperties.Name="Load more replies"
-                    HorizontalAlignment="Center"
-                    Margin="0,12,0,20"
                     Visibility="Collapsed"
                     Click="LoadMoreRepliesButton_Click" />
 

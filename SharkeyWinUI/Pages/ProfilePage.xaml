@@ -97,7 +97,7 @@
             </Grid>
 
             <!-- ══ Two-column layout: profile info + sidebar ══════════════════ -->
-            <Grid Padding="16,28,16,0" ColumnSpacing="16">
+            <Grid Padding="16,24,16,0" ColumnSpacing="16">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="300" />
@@ -146,10 +146,7 @@
                     </StackPanel>
 
                     <!-- Stats row -->
-                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        CornerRadius="8"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
+                    <Border Style="{StaticResource AppCardContainerStyle}"
                             Padding="16,10">
                         <StackPanel Orientation="Horizontal" Spacing="0">
                             <!-- Notes -->
@@ -193,10 +190,7 @@
 
                     <!-- Profile fields table -->
                     <Border x:Name="FieldsCard"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        CornerRadius="8"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
+                            Style="{StaticResource AppCardContainerStyle}"
                             Visibility="Collapsed">
                         <ItemsControl x:Name="FieldsList">
                             <ItemsControl.ItemTemplate>
@@ -246,10 +240,7 @@
 
                     <!-- Files card -->
                     <Border x:Name="FilesCard"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            CornerRadius="8"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
+                            Style="{StaticResource AppCardContainerStyle}"
                             Visibility="Collapsed">
                         <StackPanel Padding="12,10,12,12" Spacing="10">
                             <!-- Header -->
@@ -289,10 +280,7 @@
 
                     <!-- Activity card -->
                     <Border x:Name="ActivityCard"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            CornerRadius="8"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
+                            Style="{StaticResource AppCardContainerStyle}"
                             Visibility="Collapsed">
                         <StackPanel Padding="12,10,12,14" Spacing="10">
                             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -324,15 +312,12 @@
                 </Grid>
 
                 <ListView x:Name="NotesList"
+                          Style="{StaticResource AppCenteredFeedListStyle}"
                           SelectionMode="None"
                           IsItemClickEnabled="True"
                           ItemClick="NotesList_ItemClick">
                     <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            <Setter Property="Padding" Value="0" />
-                            <Setter Property="Margin" Value="0,2" />
-                        </Style>
+                        <StaticResource ResourceKey="AppStretchListItemStyle" />
                     </ListView.ItemContainerStyle>
                     <ListView.ItemTemplate>
                         <DataTemplate>
@@ -343,9 +328,8 @@
 
                 <Button x:Name="LoadMoreNotesButton"
                         Content="Load more notes"
+                    Style="{StaticResource AppLoadMoreButtonStyle}"
                         AutomationProperties.Name="Load more profile notes"
-                        HorizontalAlignment="Center"
-                        Margin="0,12,0,0"
                         Visibility="Collapsed"
                         Click="LoadMoreNotesButton_Click" />
             </StackPanel>

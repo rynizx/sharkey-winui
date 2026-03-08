@@ -18,8 +18,8 @@
         </Grid.RowDefinitions>
 
         <!-- Header + search box -->
-        <StackPanel Grid.Row="0" Padding="20,14" Spacing="10">
-            <TextBlock Text="Search" Style="{StaticResource SubtitleTextBlockStyle}" />
+        <StackPanel Grid.Row="0" Padding="{StaticResource AppPageHeaderPadding}" Spacing="10">
+            <TextBlock Text="Search" Style="{StaticResource AppPageHeaderTextStyle}" />
             <AutoSuggestBox x:Name="SearchBox"
                             AutomationProperties.Name="Search notes or users"
                             PlaceholderText="Search notes or users…"
@@ -35,18 +35,12 @@
             <!-- Notes tab -->
             <PivotItem Header="Notes">
                 <ListView x:Name="NotesList"
-                          Padding="8,0"
-                          MaxWidth="680"
-                          HorizontalAlignment="Center"
+                          Style="{StaticResource AppCenteredFeedListStyle}"
                           SelectionMode="None"
                           IsItemClickEnabled="True"
                           ItemClick="NotesList_ItemClick">
                     <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            <Setter Property="Padding" Value="0" />
-                            <Setter Property="Margin" Value="0,2" />
-                        </Style>
+                        <StaticResource ResourceKey="AppStretchListItemStyle" />
                     </ListView.ItemContainerStyle>
                     <ListView.ItemTemplate>
                         <DataTemplate>
@@ -56,9 +50,8 @@
                     <ListView.Footer>
                         <Button x:Name="LoadMoreNotesButton"
                                 Content="Load more"
+                                Style="{StaticResource AppLoadMoreButtonStyle}"
                             AutomationProperties.Name="Load more note results"
-                                HorizontalAlignment="Center"
-                            Margin="0,12,0,20"
                                 Visibility="Collapsed"
                                 Click="LoadMoreNotesButton_Click" />
                     </ListView.Footer>
@@ -68,17 +61,12 @@
             <!-- Users tab -->
             <PivotItem Header="Users">
                 <ListView x:Name="UsersList"
-                          Padding="8,0"
-                          MaxWidth="680"
-                          HorizontalAlignment="Center"
+                          Style="{StaticResource AppCenteredFeedListStyle}"
                           SelectionMode="None"
                           IsItemClickEnabled="True"
                           ItemClick="UsersList_ItemClick">
                     <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            <Setter Property="Padding" Value="0" />
-                        </Style>
+                        <StaticResource ResourceKey="AppStretchListItemStyle" />
                     </ListView.ItemContainerStyle>
                     <ListView.ItemTemplate>
                         <DataTemplate>
@@ -111,9 +99,8 @@
                     <ListView.Footer>
                         <Button x:Name="LoadMoreUsersButton"
                                 Content="Load more"
+                                Style="{StaticResource AppLoadMoreButtonStyle}"
                             AutomationProperties.Name="Load more user results"
-                                HorizontalAlignment="Center"
-                            Margin="0,12,0,20"
                                 Visibility="Collapsed"
                                 Click="LoadMoreUsersButton_Click" />
                     </ListView.Footer>

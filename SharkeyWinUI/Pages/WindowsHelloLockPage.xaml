@@ -18,11 +18,11 @@
 
             <!-- App name -->
             <TextBlock Text="Sharkey WinUI"
-                       Style="{StaticResource TitleTextBlockStyle}"
+                       Style="{StaticResource AppPageHeaderTextStyle}"
                        HorizontalAlignment="Center" />
 
             <!-- Account pill -->
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            <Border Style="{StaticResource AppCardContainerStyle}"
                     CornerRadius="20" Padding="12,8" HorizontalAlignment="Center">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <!-- Avatar -->

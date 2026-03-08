@@ -9,7 +9,7 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <ScrollViewer>
-        <StackPanel MaxWidth="680" HorizontalAlignment="Center" Padding="24,20,24,32" Spacing="4">
+        <StackPanel MaxWidth="680" HorizontalAlignment="Center" Padding="{StaticResource AppPageWideContentPadding}" Spacing="4">
 
             <!-- ── Page header ────────────────────────────────────────────── -->
             <StackPanel Orientation="Horizontal" Spacing="14" Margin="0,0,0,16">
@@ -21,7 +21,7 @@
                 </Border>
                 <StackPanel VerticalAlignment="Center" Spacing="1">
                     <TextBlock Text="Notification Settings"
-                               Style="{StaticResource SubtitleTextBlockStyle}" />
+                               Style="{StaticResource AppPageHeaderTextStyle}" />
                     <TextBlock Text="Control which notifications you receive and how"
                                Style="{StaticResource CaptionTextBlockStyle}"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
@@ -48,9 +48,7 @@
             </TextBlock>
 
             <!-- One card row per notification type -->
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1" CornerRadius="8">
+            <Border Style="{StaticResource AppCardContainerStyle}">
                 <ItemsControl x:Name="ReceiveConfigList">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -92,9 +90,7 @@
                 Choose which events send you an email. Requires a verified email address on the server.
             </TextBlock>
 
-            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1" CornerRadius="8" Padding="16,10">
+            <Border Style="{StaticResource AppCardContainerStyle}" Padding="16,10">
                 <StackPanel x:Name="EmailTypesPanel" Spacing="6" />
             </Border>
 

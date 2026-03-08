@@ -9,16 +9,16 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <ScrollViewer>
-        <StackPanel MaxWidth="680" HorizontalAlignment="Center" Padding="16" Spacing="12">
+        <StackPanel MaxWidth="680" HorizontalAlignment="Center" Padding="{StaticResource AppPageContentPadding}" Spacing="12">
 
             <!-- Header -->
             <TextBlock x:Name="HeaderText" Text="New Note"
-                       Style="{StaticResource SubtitleTextBlockStyle}" />
+                       Style="{StaticResource AppPageHeaderTextStyle}" />
 
             <!-- Reply / Renote context -->
             <Border x:Name="ContextBorder" Visibility="Collapsed"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    CornerRadius="4" Padding="10">
+                    Style="{StaticResource AppCardContainerStyle}"
+                    Padding="10">
                 <TextBlock x:Name="ContextText" TextWrapping="Wrap"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             </Border>

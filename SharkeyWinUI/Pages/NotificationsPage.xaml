@@ -18,13 +18,13 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Grid Grid.Row="0" Padding="20,14" ColumnSpacing="12">
+        <Grid Grid.Row="0" Padding="{StaticResource AppPageHeaderPadding}" ColumnSpacing="12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock Text="Notifications" Style="{StaticResource SubtitleTextBlockStyle}"
+            <TextBlock Text="Notifications" Style="{StaticResource AppPageHeaderTextStyle}"
                        VerticalAlignment="Center" />
                 <Button Grid.Column="1" Content="Mark all read"
                     ToolTipService.ToolTip="Mark all notifications as read"
@@ -41,7 +41,7 @@
         <!-- Type filter chips -->
         <ScrollViewer Grid.Row="1" HorizontalScrollMode="Enabled"
                       VerticalScrollMode="Disabled" HorizontalScrollBarVisibility="Hidden">
-            <StackPanel x:Name="FilterChipsPanel" Orientation="Horizontal" Spacing="6" Padding="20,0,20,8">
+            <StackPanel x:Name="FilterChipsPanel" Orientation="Horizontal" Spacing="6" Padding="20,0,20,10">
                 <ToggleButton x:Name="FilterAll" Content="All" IsChecked="True"
                               Click="FilterChip_Click" Tag="" />
                 <ToggleButton Content="Follows"    Tag="follow"                Click="FilterChip_Click" />
@@ -58,8 +58,7 @@
         <InfoBar x:Name="ErrorBar" Grid.Row="2" IsOpen="False" IsClosable="True" Severity="Error" />
 
         <ListView x:Name="NotifList" Grid.Row="3"
-                  MaxWidth="680"
-                  HorizontalAlignment="Center"
+              Style="{StaticResource AppCenteredFeedListStyle}"
                   SelectionMode="None"
                   IsItemClickEnabled="True"
                   ItemClick="NotifList_ItemClick">
@@ -69,10 +68,7 @@
                 </ItemsPanelTemplate>
             </ListView.ItemsPanel>
             <ListView.ItemContainerStyle>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Padding" Value="0" />
-                </Style>
+                <StaticResource ResourceKey="AppStretchListItemStyle" />
             </ListView.ItemContainerStyle>
             <ListView.ItemTemplate>
                 <DataTemplate>
@@ -118,8 +114,8 @@
             </ListView.ItemTemplate>
             <ListView.Footer>
                 <Button x:Name="LoadMoreButton" Content="Load more"
+                    Style="{StaticResource AppLoadMoreButtonStyle}"
                     AutomationProperties.Name="Load more notifications"
-                    HorizontalAlignment="Center" Margin="0,12,0,20"
                         Click="LoadMoreButton_Click" />
             </ListView.Footer>
         </ListView>
