@@ -163,6 +163,25 @@ jobs:
           $hasPfx = -not [string]::IsNullOrWhiteSpace($env:PACKAGE_CERT_PFX_BASE64)
           $hasPassword = -not [string]::IsNullOrWhiteSpace($env:PACKAGE_CERT_PASSWORD)
           $signingAvailable = $hasPfx -and $hasPassword
+          $signingReason = "missing-secrets"
+
+          if ($signingAvailable) {
+            try {
+              $rawPfx = [Convert]::FromBase64String($env:PACKAGE_CERT_PFX_BASE64)
+              $flags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+              $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($rawPfx, $env:PACKAGE_CERT_PASSWORD, $flags)
+              if ($null -eq $cert -or [string]::IsNullOrWhiteSpace($cert.Subject)) {
+                throw "Certificate could not be loaded from PFX."
+              }
+              $signingReason = "validated"
+              Write-Host "Signing certificate preflight succeeded: $($cert.Subject)"
+            } catch {
+              $signingAvailable = $false
+              $signingReason = "invalid-cert-or-password"
+              Write-Warning "Signing preflight failed ($($_.Exception.Message)). Falling back to unsigned artifacts."
+            }
+          }
+
           $signingLabel = if ($signingAvailable) { "signed" } else { "unsigned" }
           $hasSubject = -not [string]::IsNullOrWhiteSpace($env:PACKAGE_CERT_SUBJECT)
           $subjectValidation = if ($hasSubject) { "enabled" } else { "skipped" }
@@ -181,6 +200,7 @@ jobs:
 
           "signing_available=$($signingAvailable.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "signing_label=$signingLabel" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "signing_reason=$signingReason" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "subject_validation=$subjectValidation" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Validate manifest publisher subject
