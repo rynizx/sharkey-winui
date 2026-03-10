@@ -29,11 +29,11 @@ jobs:
         with:
           fetch-depth: 0       # full history for version stamping
 
-      # 2. Set up .NET 8 SDK (global.json in the repo also enforces this)
+      # 2. Set up .NET 10 SDK (global.json in the repo also enforces this)
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
 
       # NOTE: The Windows App SDK is delivered via the Microsoft.WindowsAppSDK
       # NuGet package (v1.5+). A separate 'dotnet workload install' step is NOT
@@ -124,7 +124,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
 
       # NOTE: No 'dotnet workload install' — see build job comment above.
 

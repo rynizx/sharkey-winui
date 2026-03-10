@@ -2,12 +2,12 @@
 
 ## Project Overview
 
-Sharkey WinUI is a native Windows desktop client for [Misskey](https://misskey-hub.net/) and [Sharkey](https://activitypub.software/ahrienby/Sharkey) social platforms, built with **WinUI 3** and **.NET 8**.
+Sharkey WinUI is a native Windows desktop client for [Misskey](https://misskey-hub.net/) and [Sharkey](https://activitypub.software/ahrienby/Sharkey) social platforms, built with **WinUI 3** and **.NET 10**.
 
 ## Tech Stack
 
 - **UI Framework**: WinUI 3 via Windows App SDK 1.6
-- **Target Framework**: `net8.0-windows10.0.19041.0`, minimum `10.0.17763.0`
+- **Target Framework**: `net10.0-windows10.0.19041.0`, minimum `10.0.17763.0`
 - **Language**: C# with nullable reference types enabled and implicit usings enabled
 - **MVVM Toolkit**: CommunityToolkit.Mvvm 8.3.2
 - **HTTP**: `System.Net.Http.HttpClient` with `System.Text.Json`

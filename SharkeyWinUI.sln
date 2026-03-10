@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharkeyWinUI", "SharkeyWinUI\SharkeyWinUI.csproj", "{11C08E8A-D5A9-4158-ACE4-C1359978E0BB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharkeyWinUI.Tests", "SharkeyWinUI.Tests\SharkeyWinUI.Tests.csproj", "{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -36,5 +38,17 @@ Global
 		{11C08E8A-D5A9-4158-ACE4-C1359978E0BB}.Release|arm64.ActiveCfg = Release|arm64
 		{11C08E8A-D5A9-4158-ACE4-C1359978E0BB}.Release|arm64.Build.0 = Release|arm64
 		{11C08E8A-D5A9-4158-ACE4-C1359978E0BB}.Release|arm64.Deploy.0 = Release|arm64
+		{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}.Debug|x64.ActiveCfg = Debug|x64
+		{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}.Debug|x64.Build.0 = Debug|x64
+		{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}.Debug|x86.ActiveCfg = Debug|x86
+		{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}.Debug|x86.Build.0 = Debug|x86
+		{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}.Debug|arm64.ActiveCfg = Debug|arm64
+		{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}.Debug|arm64.Build.0 = Debug|arm64
+		{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}.Release|x64.ActiveCfg = Release|x64
+		{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}.Release|x64.Build.0 = Release|x64
+		{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}.Release|x86.ActiveCfg = Release|x86
+		{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}.Release|x86.Build.0 = Release|x86
+		{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}.Release|arm64.ActiveCfg = Release|arm64
+		{9E4B6D1A-C2F8-4E93-B5A7-8D3F2E1C4B6A}.Release|arm64.Build.0 = Release|arm64
 	EndGlobalSection
 EndGlobal
