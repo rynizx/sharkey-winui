@@ -10,6 +10,7 @@ namespace SharkeyWinUI.Pages;
 
 public sealed partial class TimelinePage : Page
 {
+    private const int PageSize = 30;
     private readonly ObservableCollection<Note> _notes = new();
     private string _kind = "home";
     private CancellationTokenSource _cts = new();
@@ -80,7 +81,7 @@ public sealed partial class TimelinePage : Page
             if (batch.Count > 0)
                 _untilId = batch[^1].Id;
 
-            LoadMoreButton.Visibility = batch.Count == 30 ? Visibility.Visible : Visibility.Collapsed;
+            LoadMoreButton.Visibility = batch.Count == PageSize ? Visibility.Visible : Visibility.Collapsed;
             EmptyState.Visibility = _notes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
         catch (OperationCanceledException)
@@ -104,12 +105,12 @@ public sealed partial class TimelinePage : Page
     private Task<List<Note>> FetchAsync(string? untilId, CancellationToken ct) =>
         _kind switch
         {
-            "home"   => App.ApiClient.GetHomeTimelineAsync(limit: 30, untilId: untilId, ct: ct),
-            "local"  => App.ApiClient.GetLocalTimelineAsync(limit: 30, untilId: untilId, ct: ct),
-            "social" => App.ApiClient.GetSocialTimelineAsync(limit: 30, untilId: untilId, ct: ct),
-            "global" => App.ApiClient.GetGlobalTimelineAsync(limit: 30, untilId: untilId, ct: ct),
-            "bubble" => App.ApiClient.GetBubbleTimelineAsync(limit: 30, untilId: untilId, ct: ct),
-            _        => App.ApiClient.GetHomeTimelineAsync(limit: 30, untilId: untilId, ct: ct),
+            "home"   => App.ApiClient.GetHomeTimelineAsync(limit: PageSize, untilId: untilId, ct: ct),
+            "local"  => App.ApiClient.GetLocalTimelineAsync(limit: PageSize, untilId: untilId, ct: ct),
+            "social" => App.ApiClient.GetSocialTimelineAsync(limit: PageSize, untilId: untilId, ct: ct),
+            "global" => App.ApiClient.GetGlobalTimelineAsync(limit: PageSize, untilId: untilId, ct: ct),
+            "bubble" => App.ApiClient.GetBubbleTimelineAsync(limit: PageSize, untilId: untilId, ct: ct),
+            _        => App.ApiClient.GetHomeTimelineAsync(limit: PageSize, untilId: untilId, ct: ct),
         };
 
     // ── Streaming ─────────────────────────────────────────────────────────────
