@@ -114,8 +114,9 @@
             </ListView.ItemTemplate>
             <ListView.Footer>
                 <Button x:Name="LoadMoreButton" Content="Load more"
-                    Style="{StaticResource AppLoadMoreButtonStyle}"
-                    AutomationProperties.Name="Load more notifications"
+                        Style="{StaticResource AppLoadMoreButtonStyle}"
+                        AutomationProperties.Name="Load more notifications"
+                        Visibility="Collapsed"
                         Click="LoadMoreButton_Click" />
             </ListView.Footer>
         </ListView>

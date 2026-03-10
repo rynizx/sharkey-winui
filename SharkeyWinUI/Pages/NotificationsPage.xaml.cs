@@ -89,7 +89,10 @@ public sealed partial class NotificationsPage : Page
         if (!DispatcherQueue.TryEnqueue(() =>
         {
             if (_notifs.All(n => n.Id != notif.Id))
+            {
                 _notifs.Insert(0, notif);
+                EmptyState.Visibility = Visibility.Collapsed;
+            }
         }))
         {
             Debug.WriteLine("NotificationsPage: Dispatcher unavailable, dropping streamed notification update.");

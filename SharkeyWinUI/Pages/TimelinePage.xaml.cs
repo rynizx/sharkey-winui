@@ -80,7 +80,7 @@ public sealed partial class TimelinePage : Page
             if (batch.Count > 0)
                 _untilId = batch[^1].Id;
 
-            LoadMoreButton.Visibility = batch.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            LoadMoreButton.Visibility = batch.Count == 30 ? Visibility.Visible : Visibility.Collapsed;
             EmptyState.Visibility = _notes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
         catch (OperationCanceledException)
@@ -156,7 +156,10 @@ public sealed partial class TimelinePage : Page
             // Only prepend while near the top; inserting above while mid-scroll can
             // cause WinUI ListView to snap unexpectedly.
             if (_notes.All(n => n.Id != note.Id) && IsNearTop())
+            {
                 _notes.Insert(0, note);
+                EmptyState.Visibility = Visibility.Collapsed;
+            }
         }))
         {
             System.Diagnostics.Debug.WriteLine("TimelinePage: Dispatcher unavailable, dropping streamed note update.");
