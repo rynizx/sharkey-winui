@@ -1,6 +1,9 @@
 using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Data;
+using Microsoft.UI.Xaml.Media.Imaging;
+using SharkeyWinUI.Helpers;
 using SharkeyWinUI.Models;
 using SharkeyWinUI.Services;
 
@@ -8,8 +11,8 @@ namespace SharkeyWinUI.Pages;
 
 public sealed partial class SearchPage : Page
 {
-    private readonly ObservableCollection<Note> _notes = new();
-    private readonly ObservableCollection<User> _users = new();
+    private readonly BulkObservableCollection<Note> _notes = new();
+    private readonly BulkObservableCollection<User> _users = new();
 
     private string _lastQuery = string.Empty;
     private string? _notesUntilId;
@@ -20,6 +23,7 @@ public sealed partial class SearchPage : Page
 
     public SearchPage()
     {
+        Resources["AvatarUrlToImageSourceConverter"] = new AvatarUrlToImageSourceConverter();
         InitializeComponent();
         NotesList.ItemsSource = _notes;
         UsersList.ItemsSource = _users;
@@ -80,14 +84,14 @@ public sealed partial class SearchPage : Page
 
     private async Task SearchNotesAsync(bool refresh, CancellationToken ct)
     {
-        if (refresh) { _notes.Clear(); _notesUntilId = null; }
+        if (refresh) { _notes.ReplaceAll(Array.Empty<Note>()); _notesUntilId = null; }
 
         try
         {
             var batch = await App.ApiClient.SearchNotesAsync(
                 _lastQuery, limit: 20, untilId: _notesUntilId, ct: ct);
 
-            foreach (var n in batch) _notes.Add(n);
+            _notes.AddRange(batch);
             if (batch.Count > 0) _notesUntilId = batch[^1].Id;
 
             LoadMoreNotesButton.Visibility =
@@ -103,14 +107,14 @@ public sealed partial class SearchPage : Page
 
     private async Task SearchUsersAsync(bool refresh, CancellationToken ct)
     {
-        if (refresh) { _users.Clear(); _usersOffset = 0; }
+        if (refresh) { _users.ReplaceAll(Array.Empty<User>()); _usersOffset = 0; }
 
         try
         {
             var batch = await App.ApiClient.SearchUsersAsync(
                 _lastQuery, limit: 20, offset: _usersOffset, ct: ct);
 
-            foreach (var u in batch) _users.Add(u);
+            _users.AddRange(batch);
             _usersOffset += batch.Count;
 
             LoadMoreUsersButton.Visibility =
@@ -170,4 +174,22 @@ public sealed partial class SearchPage : Page
         current.Dispose();
         return replacement;
     }
+}
+
+internal sealed class AvatarUrlToImageSourceConverter : IValueConverter
+{
+    public object? Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is not string avatarUrl || string.IsNullOrWhiteSpace(avatarUrl))
+            return null;
+
+        BitmapImage? image = App.ImageCache.GetBitmapImage(
+            avatarUrl,
+            decodePixelWidth: 96,
+            decodePixelHeight: 96);
+        return image;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+        => throw new NotImplementedException();
 }

@@ -37,6 +37,7 @@
     <Compile Include="..\SharkeyWinUI\Models\Notification.cs" Link="Models\Notification.cs" />
     <Compile Include="..\SharkeyWinUI\Models\Misc.cs"         Link="Models\Misc.cs" />
     <Compile Include="..\SharkeyWinUI\Models\AccountSettings.cs" Link="Models\AccountSettings.cs" />
+    <Compile Include="..\SharkeyWinUI\Helpers\BulkObservableCollection.cs" Link="Helpers\BulkObservableCollection.cs" />
     <Compile Include="..\SharkeyWinUI\Services\MisskeyApiClient.cs" Link="Services\MisskeyApiClient.cs" />
   </ItemGroup>
 

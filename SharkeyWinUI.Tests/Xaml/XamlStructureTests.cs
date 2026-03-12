@@ -237,6 +237,32 @@ public class XamlStructureTests
         }
     }
 
+    [TestMethod]
+    public void NoteCard_CodeBehind_SetsAccessibilityName_ForDynamicPollButtons()
+    {
+        var fullPath = Path.Combine(SolutionRoot(), "SharkeyWinUI/Controls/NoteCard.xaml.cs");
+        Assert.IsTrue(File.Exists(fullPath), $"Code-behind file not found: {fullPath}");
+
+        var code = File.ReadAllText(fullPath);
+        StringAssert.Contains(
+            code,
+            "AutomationProperties.SetName(btn, $\"Vote for {choice.Text}\")",
+            "Poll choice buttons should set an AutomationProperties.Name for screen readers.");
+    }
+
+    [TestMethod]
+    public void NoteCard_CodeBehind_SetsAccessibilityName_ForDynamicReactionButtons()
+    {
+        var fullPath = Path.Combine(SolutionRoot(), "SharkeyWinUI/Controls/NoteCard.xaml.cs");
+        Assert.IsTrue(File.Exists(fullPath), $"Code-behind file not found: {fullPath}");
+
+        var code = File.ReadAllText(fullPath);
+        StringAssert.Contains(
+            code,
+            "AutomationProperties.SetName(btn, $\"React with {kv.Key}, {reactionCountText}\")",
+            "Reaction buttons should set an AutomationProperties.Name for screen readers.");
+    }
+
     // ── Page-level structure ──────────────────────────────────────────────────
 
     [TestMethod]

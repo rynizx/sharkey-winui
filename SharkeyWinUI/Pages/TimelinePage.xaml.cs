@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
+using SharkeyWinUI.Helpers;
 using SharkeyWinUI.Models;
 using SharkeyWinUI.Services;
 
@@ -10,9 +11,10 @@ namespace SharkeyWinUI.Pages;
 
 public sealed partial class TimelinePage : Page
 {
-    private readonly ObservableCollection<Note> _notes = new();
+    private readonly BulkObservableCollection<Note> _notes = new();
     private string _kind = "home";
     private CancellationTokenSource _cts = new();
+    private bool _isLoading;
 
     // For pagination – id of the oldest note currently loaded
     private string? _untilId;
@@ -61,21 +63,24 @@ public sealed partial class TimelinePage : Page
 
     private async Task LoadAsync(bool refresh)
     {
+        if (_isLoading)
+            return;
+
+        _isLoading = true;
         SetLoading(true);
         ErrorBar.IsOpen = false;
         EmptyState.Visibility = Visibility.Collapsed;
 
         if (refresh)
         {
-            _notes.Clear();
+            _notes.ReplaceAll(Array.Empty<Note>());
             _untilId = null;
         }
 
         try
         {
             var batch = await FetchAsync(_untilId, _cts.Token);
-            foreach (var note in batch)
-                _notes.Add(note);
+            _notes.AddRange(batch);
 
             if (batch.Count > 0)
                 _untilId = batch[^1].Id;
@@ -97,6 +102,7 @@ public sealed partial class TimelinePage : Page
         }
         finally
         {
+            _isLoading = false;
             SetLoading(false);
         }
     }

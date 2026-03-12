@@ -11,6 +11,7 @@ public partial class App : Application
     public static MisskeyApiClient ApiClient { get; } = new();
     public static AuthService AuthService { get; } = new();
     public static MisskeyStreamingService Streaming { get; set; } = new();
+    public static ImageCacheService ImageCache { get; } = new();
 
     /// <summary>Reference to the main window, set in <see cref="OnLaunched"/>.</summary>
     public static MainWindow? MainWindow { get; private set; }

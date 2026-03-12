@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -115,19 +116,15 @@ public sealed partial class NoteCard : UserControl
                 _lastAvatarUrl = avatarUrl;
                 try
                 {
-                    if (Uri.TryCreate(avatarUrl, UriKind.Absolute, out var avatarUri))
-                    {
-                        // Decode at 2× the 42 px render size so it looks sharp on HiDPI.
-                        AvatarBrush.ImageSource = new BitmapImage(avatarUri)
-                        {
-                            DecodePixelWidth  = 84,
-                            DecodePixelHeight = 84,
-                        };
-                    }
-                    else
-                    {
+                    var avatarSource = App.ImageCache.GetBitmapImage(
+                        avatarUrl,
+                        decodePixelWidth: 84,
+                        decodePixelHeight: 84);
+
+                    if (avatarSource == null)
                         Debug.WriteLine($"NoteCard: Invalid avatar URL: {avatarUrl}");
-                    }
+                    else
+                        AvatarBrush.ImageSource = avatarSource;
                 }
                 catch (Exception ex)
                 {
@@ -265,15 +262,12 @@ public sealed partial class NoteCard : UserControl
             {
                 try
                 {
-                    if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var imageUri))
-                    {
-                        // Constrain decode width to avoid decoding full-resolution images into memory.
-                        img.Source = new BitmapImage(imageUri) { DecodePixelWidth = 400 };
-                    }
-                    else
-                    {
+                    // Constrain decode width to avoid decoding full-resolution images into memory.
+                    var mediaSource = App.ImageCache.GetBitmapImage(imageUrl, decodePixelWidth: 400);
+                    if (mediaSource == null)
                         Debug.WriteLine($"NoteCard: Invalid media URL: {imageUrl}");
-                    }
+                    else
+                        img.Source = mediaSource;
                 }
                 catch (Exception ex)
                 {
@@ -441,6 +435,7 @@ public sealed partial class NoteCard : UserControl
                     Padding = new Thickness(0),
                     Tag = choiceIndex,
                 };
+                AutomationProperties.SetName(btn, $"Vote for {choice.Text}");
                 RoutedEventHandler handler = PollChoiceButton_Click;
                 btn.Click += handler;
                 _pollHandlers.Add((btn, handler));
@@ -548,6 +543,8 @@ public sealed partial class NoteCard : UserControl
                 };
                 if (note.MyReaction == kv.Key)
                     btn.Style = GetStyleResource("AccentButtonStyle");
+                var reactionCountText = kv.Value == 1 ? "1 reaction" : $"{kv.Value} reactions";
+                AutomationProperties.SetName(btn, $"React with {kv.Key}, {reactionCountText}");
                 RoutedEventHandler handler = ReactionButton_Click;
                 btn.Click += handler;
                 _dynamicHandlers.Add((btn, handler));

@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Navigation;
+using SharkeyWinUI.Helpers;
 using SharkeyWinUI.Models;
 using SharkeyWinUI.Services;
 
@@ -12,10 +13,11 @@ namespace SharkeyWinUI.Pages;
 
 public sealed partial class NotificationsPage : Page
 {
-    private readonly ObservableCollection<Notification> _notifs = new();
+    private readonly BulkObservableCollection<Notification> _notifs = new();
     private string? _activeTypeFilter; // null = all
     private string? _untilId;
     private CancellationTokenSource _cts = new();
+    private bool _isLoading;
 
     public NotificationsPage()
     {
@@ -52,10 +54,14 @@ public sealed partial class NotificationsPage : Page
 
     private async Task LoadAsync(bool refresh, CancellationToken ct)
     {
+        if (_isLoading)
+            return;
+
+        _isLoading = true;
         SetLoading(true);
         ErrorBar.IsOpen = false;
         EmptyState.Visibility = Visibility.Collapsed;
-        if (refresh) { _notifs.Clear(); _untilId = null; }
+        if (refresh) { _notifs.ReplaceAll(Array.Empty<Notification>()); _untilId = null; }
 
         try
         {
@@ -69,7 +75,7 @@ public sealed partial class NotificationsPage : Page
                 markAsRead: true,
                 ct: ct);
 
-            foreach (var n in batch) _notifs.Add(n);
+            _notifs.AddRange(batch);
             if (batch.Count > 0) _untilId = batch[^1].Id;
 
             LoadMoreButton.Visibility = batch.Count == 30
@@ -79,7 +85,11 @@ public sealed partial class NotificationsPage : Page
         catch (OperationCanceledException) { }
         catch (MisskeyApiException ex) { ShowError($"API error {(int)ex.StatusCode}: {ex.ResponseBody}"); }
         catch (Exception ex) { ShowError(ex.Message); }
-        finally { SetLoading(false); }
+        finally
+        {
+            _isLoading = false;
+            SetLoading(false);
+        }
     }
 
     // ── Streaming ─────────────────────────────────────────────────────────────

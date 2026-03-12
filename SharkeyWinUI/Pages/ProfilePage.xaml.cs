@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml.Shapes;
+using SharkeyWinUI.Helpers;
 using SharkeyWinUI.Models;
 using SharkeyWinUI.Services;
 
@@ -11,7 +12,7 @@ namespace SharkeyWinUI.Pages;
 
 public sealed partial class ProfilePage : Page
 {
-    private readonly ObservableCollection<Note> _notes = new();
+    private readonly BulkObservableCollection<Note> _notes = new();
     private User? _user;
     private UserRelation? _relation;
     private string? _notesUntilId;
@@ -50,7 +51,7 @@ public sealed partial class ProfilePage : Page
     {
         SetLoading(true);
         ErrorBar.IsOpen = false;
-        _notes.Clear();
+        _notes.ReplaceAll(Array.Empty<Note>());
         _notesUntilId = null;
 
         try
@@ -111,17 +112,35 @@ public sealed partial class ProfilePage : Page
         {
             try
             {
-                BannerImage.Source = new BitmapImage(new Uri(user.BannerUrl));
-                BannerFallback.Visibility = Visibility.Collapsed;
+                var bannerSource = App.ImageCache.GetBitmapImage(user.BannerUrl, decodePixelWidth: 1200);
+                if (bannerSource != null)
+                {
+                    BannerImage.Source = bannerSource;
+                    BannerFallback.Visibility = Visibility.Collapsed;
+                }
+                else
+                {
+                    BannerImage.Source = null;
+                    BannerFallback.Visibility = Visibility.Visible;
+                }
             }
             catch { /* leave fallback visible */ }
+        }
+        else
+        {
+            BannerImage.Source = null;
+            BannerFallback.Visibility = Visibility.Visible;
         }
 
         // Avatar
         if (!string.IsNullOrEmpty(user.AvatarUrl))
         {
-            try { AvatarBrush.ImageSource = new BitmapImage(new Uri(user.AvatarUrl)); }
+            try { AvatarBrush.ImageSource = App.ImageCache.GetBitmapImage(user.AvatarUrl, decodePixelWidth: 160, decodePixelHeight: 160); }
             catch { /* leave blank */ }
+        }
+        else
+        {
+            AvatarBrush.ImageSource = null;
         }
 
         DisplayNameText.Text = user.EffectiveName;
@@ -314,7 +333,7 @@ public sealed partial class ProfilePage : Page
             var batch = await App.ApiClient.GetUserNotesAsync(
                 _user.Id, limit: 20, untilId: _notesUntilId, ct: ct);
 
-            foreach (var n in batch) _notes.Add(n);
+            _notes.AddRange(batch);
             if (batch.Count > 0) _notesUntilId = batch[^1].Id;
 
             LoadMoreNotesButton.Visibility =

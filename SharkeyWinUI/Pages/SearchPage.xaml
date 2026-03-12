@@ -79,7 +79,7 @@
                                 <!-- Avatar -->
                                 <Ellipse Width="40" Height="40" Grid.Column="0">
                                     <Ellipse.Fill>
-                                        <ImageBrush ImageSource="{Binding AvatarUrl}" Stretch="UniformToFill" />
+                                        <ImageBrush ImageSource="{Binding AvatarUrl, Converter={StaticResource AvatarUrlToImageSourceConverter}}" Stretch="UniformToFill" />
                                     </Ellipse.Fill>
                                 </Ellipse>
 
