@@ -4,6 +4,7 @@ name: Build & Package
 on:
   push:
     branches: [ main, "copilot/**" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -25,13 +26,13 @@ jobs:
     steps:
       # 1. Checkout
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0       # full history for version stamping
 
       # 2. Set up .NET 10 SDK (global.json in the repo also enforces this)
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 
@@ -42,7 +43,7 @@ jobs:
 
       # 3. Cache NuGet packages
       - name: Cache NuGet
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
@@ -78,7 +79,7 @@ jobs:
               Write-Host "Running tests for $($proj.FullName)..."
               dotnet test $proj.FullName `
                 --configuration ${{ env.CONFIGURATION }} `
-                --no-build `
+                --no-restore `
                 --verbosity normal `
                 --logger "trx;LogFileName=test-results-$($proj.BaseName).trx"
               if ($LASTEXITCODE -ne 0) {
@@ -95,7 +96,7 @@ jobs:
       # 7. Upload test results (if any were produced)
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results
           path: "**/*.trx"
@@ -117,19 +118,19 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 
       # NOTE: No 'dotnet workload install' — see build job comment above.
 
       - name: Cache NuGet
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
@@ -306,14 +307,14 @@ jobs:
           }
 
       - name: Upload MSIX artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: SharkeyWinUI-msix-${{ steps.version.outputs.VERSION }}-${{ steps.signing_preflight.outputs.signing_label }}
           path: ./artifacts/msix/
           if-no-files-found: warn
 
       - name: Upload ZIP artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: SharkeyWinUI-zip-${{ steps.version.outputs.VERSION }}-${{ steps.signing_preflight.outputs.signing_label }}
           path: ${{ steps.portable_zip.outputs.zip_path }}
@@ -330,17 +331,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download MSIX artifact
-        uses: actions/download-artifact@v4.1.3
+        uses: actions/download-artifact@v7
         with:
           pattern: SharkeyWinUI-msix-*
           path: ./release-assets
           merge-multiple: true
 
       - name: Download ZIP artifact
-        uses: actions/download-artifact@v4.1.3
+        uses: actions/download-artifact@v7
         with:
           pattern: SharkeyWinUI-zip-*
           path: ./release-assets
