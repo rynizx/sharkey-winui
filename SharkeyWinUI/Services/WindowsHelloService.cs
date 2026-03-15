@@ -1,5 +1,6 @@
 using Windows.Security.Credentials;
 using Windows.Security.Credentials.UI;
+using Windows.Foundation.Metadata;
 
 namespace SharkeyWinUI.Services;
 
@@ -21,6 +22,9 @@ public sealed class WindowsHelloService
     // Resource name used for all PasswordVault entries
     private const string VaultResource = "SharkeyWinUI";
 
+    // Cache availability to avoid repeatedly probing WinRT APIs that may be unsupported.
+    private static bool? _helloAvailabilityCache;
+
     // ── Availability ──────────────────────────────────────────────────────────
 
     /// <summary>
@@ -30,15 +34,27 @@ public sealed class WindowsHelloService
     /// </summary>
     public static async Task<bool> IsAvailableAsync()
     {
+        if (_helloAvailabilityCache.HasValue)
+            return _helloAvailabilityCache.Value;
+
+        if (!ApiInformation.IsTypePresent("Windows.Security.Credentials.UI.UserConsentVerifier"))
+        {
+            _helloAvailabilityCache = false;
+            return false;
+        }
+
         try
         {
             var status = await UserConsentVerifier.CheckAvailabilityAsync()
                 .AsTask().ConfigureAwait(false);
-            return status == UserConsentVerifierAvailability.Available;
+            var available = status == UserConsentVerifierAvailability.Available;
+            _helloAvailabilityCache = available;
+            return available;
         }
         catch
         {
             // Device does not support the API (e.g., very old Windows build)
+            _helloAvailabilityCache = false;
             return false;
         }
     }
@@ -54,6 +70,9 @@ public sealed class WindowsHelloService
     /// </param>
     public static async Task<UserConsentVerificationResult> RequestVerificationAsync(string message)
     {
+        if (!ApiInformation.IsTypePresent("Windows.Security.Credentials.UI.UserConsentVerifier"))
+            return UserConsentVerificationResult.DeviceNotPresent;
+
         try
         {
             return await UserConsentVerifier.RequestVerificationAsync(message)
@@ -91,14 +110,11 @@ public sealed class WindowsHelloService
         try
         {
             var vault = new PasswordVault();
-            var cred  = vault.Retrieve(VaultResource, accountName);
+            var cred = FindCredential(vault, accountName);
+            if (cred == null) return null;
+
             cred.RetrievePassword();
             return cred.Password;
-        }
-        catch (Exception ex) when (ex.HResult == unchecked((int)0x80070490))
-        {
-            // Element not found (0x80070490) — no credential stored yet
-            return null;
         }
         catch
         {
@@ -116,7 +132,9 @@ public sealed class WindowsHelloService
         try
         {
             var vault = new PasswordVault();
-            var cred  = vault.Retrieve(VaultResource, accountName);
+            var cred = FindCredential(vault, accountName);
+            if (cred == null) return;
+
             vault.Remove(cred);
         }
         catch { /* not found — ignore */ }
@@ -138,6 +156,20 @@ public sealed class WindowsHelloService
         catch
         {
             return Array.Empty<string>();
+        }
+    }
+
+    private static PasswordCredential? FindCredential(PasswordVault vault, string accountName)
+    {
+        try
+        {
+            var creds = vault.FindAllByResource(VaultResource);
+            return creds.FirstOrDefault(c => string.Equals(c.UserName, accountName, StringComparison.Ordinal));
+        }
+        catch
+        {
+            // No entries for this resource or vault is unavailable.
+            return null;
         }
     }
 }
