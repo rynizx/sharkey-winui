@@ -18,7 +18,7 @@
             <!-- Reply / Renote context -->
             <Border x:Name="ContextBorder" Visibility="Collapsed"
                     Style="{StaticResource AppCardContainerStyle}"
-                    Padding="10">
+                    Padding="16,10">
                 <TextBlock x:Name="ContextText" TextWrapping="Wrap"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             </Border>
@@ -129,6 +129,8 @@
                 <Button x:Name="PostButton"
                         Content="Post"
                         Style="{StaticResource AccentButtonStyle}"
+                        ToolTipService.ToolTip="Post note"
+                        AutomationProperties.Name="Post note"
                         Click="PostButton_Click" />
             </StackPanel>
 

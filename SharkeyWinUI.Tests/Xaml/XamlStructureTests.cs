@@ -281,10 +281,51 @@ public class XamlStructureTests
     }
 
     [TestMethod]
+    public void ComposePage_PostButton_HasAccessibilityMetadata()
+    {
+        var doc = LoadXaml("SharkeyWinUI/Pages/ComposePage.xaml");
+        var postButton = FindByName(doc, "PostButton");
+
+        Assert.IsNotNull(postButton, "PostButton not found in ComposePage.xaml");
+        Assert.AreEqual("Post note", postButton.Attribute("ToolTipService.ToolTip")?.Value,
+            "PostButton should have a tooltip for consistency with other action buttons.");
+        Assert.AreEqual("Post note", postButton.Attribute("AutomationProperties.Name")?.Value,
+            "PostButton should expose an accessibility name for screen readers.");
+    }
+
+    [TestMethod]
     public void NotificationsPage_XamlIsWellFormed()
     {
         var doc = LoadXaml("SharkeyWinUI/Pages/NotificationsPage.xaml");
         Assert.IsNotNull(doc.Root);
+    }
+
+    [TestMethod]
+    public void NotificationsPage_LoadMoreButton_StartsCollapsed()
+    {
+        var doc = LoadXaml("SharkeyWinUI/Pages/NotificationsPage.xaml");
+        var loadMoreButton = FindByName(doc, "LoadMoreButton");
+
+        Assert.IsNotNull(loadMoreButton, "LoadMoreButton not found in NotificationsPage.xaml");
+        Assert.AreEqual("Collapsed", loadMoreButton.Attribute("Visibility")?.Value,
+            "LoadMoreButton should start collapsed to avoid initial flash before data loads.");
+    }
+
+    [TestMethod]
+    public void TimelinePage_CodeBehind_ShowsLoadMoreOnlyWhenPageIsFull()
+    {
+        var fullPath = Path.Combine(SolutionRoot(), "SharkeyWinUI/Pages/TimelinePage.xaml.cs");
+        Assert.IsTrue(File.Exists(fullPath), $"Code-behind file not found: {fullPath}");
+
+        var code = File.ReadAllText(fullPath);
+        StringAssert.Contains(
+            code,
+            "private const int TimelinePageSize = 30;",
+            "Timeline page size constant should remain explicit for pagination consistency.");
+        StringAssert.Contains(
+            code,
+            "LoadMoreButton.Visibility = batch.Count == TimelinePageSize ? Visibility.Visible : Visibility.Collapsed;",
+            "Timeline should only show LoadMore when the API returns a full page.");
     }
 
     [TestMethod]
