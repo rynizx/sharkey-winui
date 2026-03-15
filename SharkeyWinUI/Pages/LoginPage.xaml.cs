@@ -18,6 +18,7 @@ public sealed partial class LoginPage : Page
         "read:favorites", "write:favorites",
         "read:following", "write:following",
         "read:reactions", "write:reactions",
+        "write:votes",
         "write:notes",
     ];
 

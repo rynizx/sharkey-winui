@@ -489,10 +489,15 @@ public sealed partial class NoteCard : UserControl
         catch (MisskeyApiException ex)
         {
             Debug.WriteLine($"NoteCard: Poll vote failed with API error: {ex.ResponseBody}");
+
+            var content = ex.ResponseBody.Contains("PERMISSION_DENIED", StringComparison.OrdinalIgnoreCase)
+                ? "Your current login token does not include poll-voting permission (write:votes). Please sign out and sign back in so the app can request the updated permission set."
+                : $"The server returned an error: {ex.ResponseBody}";
+
             var dlg = new ContentDialog
             {
                 Title = "Could not vote",
-                Content = $"The server returned an error: {ex.ResponseBody}",
+                Content = content,
                 CloseButtonText = "OK",
             };
             await ShowDialogAsync(dlg);
